@@ -40,5 +40,6 @@ all: debug release
 
 all-clean: clean all
 
-clean: clean_out_dir
+clean:
 	cargo clean
+	rm -f $(OUTDIR)
