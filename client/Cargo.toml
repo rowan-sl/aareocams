@@ -1,0 +1,15 @@
+[package]
+name = "aareocams-client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sn30pro = "0.2.0"
+
+[dependencies.aareocams-scomm]
+path = "../scomm"
+
+[dependencies.aareocams-net]
+path = "../net"
