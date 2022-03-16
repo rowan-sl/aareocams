@@ -24,7 +24,7 @@ This is set up as a cargo workspace, with different sub-programs and libraries a
 
 ## Compiling
 
-currently there is realy no point, as you need the robot to use it :shrug: but in order to build the code you need a few things
+currently there is realy no point, as you need the robot to use it ¯\\\_(ツ)_/¯ but in order to build the code you need a few things
 
 - cargo, with the armv7-unknown-linux-gnueabihf toolchain installed
 - gcc-arm-linux-gnueabihf (for linking)
