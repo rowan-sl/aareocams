@@ -15,9 +15,6 @@ path = "../scomm"
 [dependencies.aareocams-net]
 path = "../net"
 
-[dependencies.aareocams-server]
-path = "../server"
-
 [dependencies.tokio]
 version = "1.17.0"
 features = ["full"]

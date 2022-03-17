@@ -2,8 +2,8 @@
 members = [
     "scomm", #  aareocams-scomm
     "net", #    aareocams-net
-    "client", # aareocams-client
-    "server", # aareocams-server
+    #"client", # aareocams-client
+    #"server", # aareocams-server
     "dash", #   aareocams-dash
     "bot", #    aareocams-bot
 ]

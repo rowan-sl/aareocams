@@ -17,8 +17,6 @@ This is set up as a cargo workspace, with different sub-programs and libraries a
 
 - `bot`: final executable which is placed on the robot
 - `dash`: final dashboard executable for controlling the robot
-- `server`: library for `bot`
-- `client`: library for `dash`
 - `net`: project spacific networking code
 - `scomm`: more general networking code, you can use this in your own project if you want
 

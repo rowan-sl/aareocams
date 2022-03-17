@@ -8,7 +8,6 @@ version = "0.1.0"
 dependencies = [
  "aareocams-net",
  "aareocams-scomm",
- "aareocams-server",
  "anyhow",
  "bincode",
  "serde",
@@ -16,24 +15,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "aareocams-client"
-version = "0.1.0"
-dependencies = [
- "aareocams-net",
- "aareocams-scomm",
- "sn30pro",
-]
-
-[[package]]
 name = "aareocams-dash"
 version = "0.1.0"
 dependencies = [
- "aareocams-client",
  "aareocams-net",
  "aareocams-scomm",
  "anyhow",
  "bincode",
  "serde",
+ "sn30pro",
  "tokio",
 ]
 
@@ -55,14 +45,6 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
-]
-
-[[package]]
-name = "aareocams-server"
-version = "0.1.0"
-dependencies = [
- "aareocams-net",
- "aareocams-scomm",
 ]
 
 [[package]]
