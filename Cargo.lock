@@ -27,6 +27,7 @@ dependencies = [
  "aareocams-scomm",
  "anyhow",
  "bincode",
+ "derivative",
  "iced",
  "iced_native",
  "serde",
@@ -50,6 +51,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "bytes",
+ "derivative",
  "serde",
  "thiserror",
  "tokio",
@@ -489,6 +491,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72c41b3b7352feb3211a0d743dc5700a4e3b60f51bd2b368892d1e0f9a95f44b"
 dependencies = [
  "darling_core",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
  "quote",
  "syn",
 ]

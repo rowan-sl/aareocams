@@ -1,9 +1,17 @@
 use bytes::BytesMut;
 use serde::{de::DeserializeOwned, Serialize};
-use std::{collections::VecDeque, io, marker::PhantomData, fmt::{Debug, Formatter, self}};
+use std::{
+    collections::VecDeque,
+    fmt::{self, Debug, Formatter},
+    io,
+    marker::PhantomData,
+};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
-    net::{TcpStream, tcp::{OwnedReadHalf, OwnedWriteHalf}},
+    net::{
+        tcp::{OwnedReadHalf, OwnedWriteHalf},
+        TcpStream,
+    },
 };
 
 use crate::header::Header;
@@ -34,10 +42,11 @@ pub enum DecodeError {
     DeserializeHeader(#[from] crate::header::DecodeHeaderError),
 }
 
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct Connection<
     M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
-    O: bincode::Options + Copy,
+    O: bincode::Options + Clone,
 > {
     stream: TcpStream,
     pending_send_data: VecDeque<BytesMut>,
@@ -46,13 +55,14 @@ pub struct Connection<
     /// if `None`, this means it is waiting for a header, if `Some` that means
     /// data is currently being read into the receiving buffer
     current_message_header: Option<Header<M, O>>,
+    #[derivative(Debug = "ignore")]
     seri_opts: O,
     _msg_type: PhantomData<M>,
 }
 
 impl<
         M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
-        O: bincode::Options + Copy,
+        O: bincode::Options + Clone,
     > Connection<M, O>
 {
     /// creates a new [`Connection`] from a tcp stream
@@ -79,8 +89,8 @@ impl<
 
     /// Queue a new message to be sent
     pub fn queue(&mut self, message: &M) -> Result<(), bincode::Error> {
-        let header = Header::header_for(message, self.seri_opts)?;
-        let message = self.seri_opts.serialize(message)?;
+        let header = Header::header_for(message, self.seri_opts.clone())?;
+        let message = self.seri_opts.clone().serialize(message)?;
         self.pending_send_data
             .push_front(header.serialize_header().into_iter().collect());
         self.pending_send_data
@@ -129,7 +139,7 @@ impl<
                             .pending_recv_data
                             .drain(..Header::<M, O>::header_byte_size())
                             .collect::<Vec<u8>>(),
-                        self.seri_opts,
+                        self.seri_opts.clone(),
                     )?);
                 }
                 Ok(false)
@@ -140,7 +150,7 @@ impl<
                         .pending_recv_data
                         .drain(..header.size() as usize)
                         .collect::<Vec<u8>>();
-                    let message = self.seri_opts.deserialize(&data)?;
+                    let message = self.seri_opts.clone().deserialize(&data)?;
                     self.pending_received.push_front(message);
                     Ok(true)
                 } else {
@@ -184,23 +194,40 @@ impl<
                 pending_recv_data: self.pending_recv_data,
                 pending_received: self.pending_received,
                 current_message_header: self.current_message_header,
-                seri_opts: self.seri_opts,
+                seri_opts: self.seri_opts.clone(),
                 _msg_type: PhantomData,
             },
             ConnectionWriteHalf {
                 write_stream,
                 pending_send_data: self.pending_send_data,
-                seri_opts: self.seri_opts,
+                seri_opts: self.seri_opts.clone(),
                 _msg_type: PhantomData,
-            }
+            },
         )
     }
 }
 
+// impl<
+//     M: Serialize + DeserializeOwned + Debug, /* message type to be used with the connection, held as a static type for usage seminatics */
+//     O: bincode::Options + Clone,
+// > Debug for Connection<M, O> {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         f.debug_struct("Connection")
+//             .field("stream", &self.stream)
+//             .field("pending_send_data", &self.pending_send_data)
+//             .field("pending_recv_data", &self.pending_recv_data)
+//             .field("pending_received", &self.pending_received)
+//             .field("current_message_header", &"Header")
+//             .field("seri_opts", &"Options")
+//             .field("_msg_type", &self._msg_type)
+//             .finish()
+//     }
+// }
+
 #[derive(Debug)]
 pub struct ConnectionReadHalf<
     M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
-    O: bincode::Options + Copy,
+    O: bincode::Options + Clone,
 > {
     read_stream: OwnedReadHalf,
     pending_recv_data: Vec<u8>,
@@ -214,7 +241,7 @@ pub struct ConnectionReadHalf<
 
 impl<
         M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
-        O: bincode::Options + Copy,
+        O: bincode::Options + Clone,
     > ConnectionReadHalf<M, O>
 {
     pub async fn wait_for_readable(&mut self) -> io::Result<()> {
@@ -236,7 +263,7 @@ impl<
                             .pending_recv_data
                             .drain(..Header::<M, O>::header_byte_size())
                             .collect::<Vec<u8>>(),
-                        self.seri_opts,
+                        self.seri_opts.clone(),
                     )?);
                 }
                 Ok(false)
@@ -247,7 +274,7 @@ impl<
                         .pending_recv_data
                         .drain(..header.size() as usize)
                         .collect::<Vec<u8>>();
-                    let message = self.seri_opts.deserialize(&data)?;
+                    let message = self.seri_opts.clone().deserialize(&data)?;
                     self.pending_received.push_front(message);
                     Ok(true)
                 } else {
@@ -259,10 +286,15 @@ impl<
 
     /// reads some data from the socket, and attempts to decode a message if enough data is sent
     ///
+    /// # Cancel Saftey
+    /// this IS cancelation safe
+    ///
     /// # Returns
     /// if a new message has been read, or if there was a error while reading
     pub async fn recv(&mut self) -> Result<bool, ConnectionRecvError> {
-        self.read_stream.read_buf(&mut self.pending_recv_data).await?;
+        self.read_stream
+            .read_buf(&mut self.pending_recv_data)
+            .await?;
         let mut message_decoded = false;
         while self.attempt_decode()? {
             message_decoded = true;
@@ -286,7 +318,7 @@ impl<
 
 pub struct ConnectionWriteHalf<
     M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
-    O: bincode::Options + Copy,
+    O: bincode::Options + Clone,
 > {
     write_stream: OwnedWriteHalf,
     pending_send_data: VecDeque<BytesMut>,
@@ -296,7 +328,7 @@ pub struct ConnectionWriteHalf<
 
 impl<
         M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
-        O: bincode::Options + Copy,
+        O: bincode::Options + Clone,
     > ConnectionWriteHalf<M, O>
 {
     /// shuts down the write half of the socket, meaning all future writes will fail
@@ -309,8 +341,8 @@ impl<
 
     /// Queue a new message to be sent
     pub fn queue(&mut self, message: &M) -> Result<(), bincode::Error> {
-        let header = Header::header_for(message, self.seri_opts)?;
-        let message = self.seri_opts.serialize(message)?;
+        let header = Header::header_for(message, self.seri_opts.clone())?;
+        let message = self.seri_opts.clone().serialize(message)?;
         self.pending_send_data
             .push_front(header.serialize_header().into_iter().collect());
         self.pending_send_data
@@ -341,7 +373,9 @@ impl<
     }
 }
 
-impl<M: Serialize + DeserializeOwned, O: Copy + bincode::Options> Debug for ConnectionWriteHalf<M, O> {
+impl<M: Serialize + DeserializeOwned, O: Copy + bincode::Options> Debug
+    for ConnectionWriteHalf<M, O>
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("ConnectionWriteHalf")
             .field("write_stream", &self.write_stream)

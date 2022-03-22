@@ -21,15 +21,19 @@ async fn main() -> Result<()> {
     let mut conn = Connection::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());
 
     loop {
-        conn.recv_msg().await?;
-        println!("{:?}", match conn.get() {
-            Some(Message::DashboardDisconnect) => {
-                println!("Dashboard disconnected, exiting");
-                break;
+        conn.recv().await?;
+        println!(
+            "{:?}",
+            match conn.get() {
+                Some(Message::DashboardDisconnect) => {
+                    println!("Dashboard disconnected, exiting");
+                    break;
+                }
+                Some(m) => m,
+                None => continue,
             }
-            m => m
-        });
+        );
     }
-    
+
     Ok(())
 }

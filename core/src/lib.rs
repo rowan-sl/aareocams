@@ -1,6 +1,5 @@
 use std::ops::Deref;
 
-
 /// A [`bool`] that can be set to true only **once**
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Fuse {
@@ -9,9 +8,7 @@ pub struct Fuse {
 
 impl Fuse {
     pub const fn new() -> Self {
-        Self {
-            burnt: false
-        }
+        Self { burnt: false }
     }
 
     pub fn burn(&mut self) {

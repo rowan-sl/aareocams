@@ -1,8 +1,7 @@
 use aareocams_net::Message;
-use aareocams_scomm::connection::ConnectionRecvError;
 use aareocams_scomm::connection::ConnectionReadHalf;
+use aareocams_scomm::connection::ConnectionRecvError;
 use iced_native::subscription::{self, Subscription};
-
 
 #[derive(thiserror::Error, Debug)]
 pub enum ConnectionError {
@@ -24,17 +23,18 @@ pub enum ConnectionWatcherState {
 }
 
 /// this is stupid, but iced subscriptions are stupid, so its even
-pub fn watch(receiver: Option<ConnectionReadHalf<Message, bincode::DefaultOptions>>) -> Subscription<ConnectionWatcherEvent> {
+pub fn watch(
+    receiver: Option<ConnectionReadHalf<Message, bincode::DefaultOptions>>,
+) -> Subscription<ConnectionWatcherEvent> {
     struct ConnectionWatcher;
 
     match receiver {
-        Some(stream) => {
-            subscription::unfold(
+        Some(stream) => subscription::unfold(
             std::any::TypeId::of::<ConnectionWatcher>(),
-            ConnectionWatcherState::Running {stream},
+            ConnectionWatcherState::Running { stream },
             |r_state| async move {
                 match r_state {
-                    ConnectionWatcherState::Running { mut stream} => {
+                    ConnectionWatcherState::Running { mut stream } => {
                         match stream.recv().await {
                             Err(e) => {
                                 return (
@@ -47,29 +47,19 @@ pub fn watch(receiver: Option<ConnectionReadHalf<Message, bincode::DefaultOption
                         if let Some(message) = stream.get() {
                             return (
                                 Some(ConnectionWatcherEvent::MessageReceived(message)),
-                                ConnectionWatcherState::Running { stream }
-                            )
+                                ConnectionWatcherState::Running { stream },
+                            );
                         }
-                        (
-                            None,
-                            ConnectionWatcherState::Running { stream }
-                        )
+                        (None, ConnectionWatcherState::Running { stream })
                     }
-                    ConnectionWatcherState::Errored => {
-                        (
-                            None,
-                            ConnectionWatcherState::Errored
-                        )
-                    }
+                    ConnectionWatcherState::Errored => (None, ConnectionWatcherState::Errored),
                 }
-            })
-        }
-        None => {
-            subscription::unfold(
-                std::any::TypeId::of::<ConnectionWatcher>(),
-                (),
-                |_| async move { (None, ()) },
-            )
-        }
+            },
+        ),
+        None => subscription::unfold(
+            std::any::TypeId::of::<ConnectionWatcher>(),
+            (),
+            |_| async move { (None, ()) },
+        ),
     }
 }

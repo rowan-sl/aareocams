@@ -15,29 +15,31 @@ pub enum DecodeHeaderError {
     InvalidContent,
 }
 
-#[derive(Debug, Default)]
-pub struct Header<M: Serialize, O: bincode::Options + Copy> {
+#[derive(Derivative, Default)]
+#[derivative(Debug)]
+pub struct Header<M: Serialize, O: bincode::Options + Clone> {
     size: u64,
+    #[derivative(Debug = "ignore")]
     options: O,
     _msg_type: PhantomData<M>,
 }
 
-impl<M: Serialize, O: bincode::Options + Copy> Clone for Header<M, O> {
+impl<M: Serialize, O: bincode::Options + Clone> Clone for Header<M, O> {
     fn clone(&self) -> Self {
         Self {
             size: self.size,
-            options: self.options,
+            options: self.options.clone(),
             _msg_type: PhantomData,
         }
     }
 }
 
-impl<M: Serialize, O: bincode::Options + Copy> Header<M, O> {
+impl<M: Serialize, O: bincode::Options + Clone> Header<M, O> {
     #[must_use]
     pub fn header_for(value: &M, options: O) -> Result<Self, Error> {
         Ok(Self {
-            size: options.serialized_size(value)?,
-            options,
+            size: options.clone().serialized_size(value)?,
+            options: options.clone(),
             _msg_type: PhantomData,
         })
     }
