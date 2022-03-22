@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "core", #   aareocams-core
     "scomm", #  aareocams-scomm
     "net", #    aareocams-net
     #"client", # aareocams-client
@@ -7,6 +8,7 @@ members = [
     "dash", #   aareocams-dash
     "bot", #    aareocams-bot
 ]
+resolver = "2"
 
 [profile.speed]
 inherits = "release"

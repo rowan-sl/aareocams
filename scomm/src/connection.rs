@@ -1,6 +1,6 @@
 use bytes::BytesMut;
 use serde::{de::DeserializeOwned, Serialize};
-use std::{collections::VecDeque, io, marker::PhantomData};
+use std::{collections::VecDeque, io, marker::PhantomData, fmt::{Debug, Formatter, self}};
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::{TcpStream, tcp::{OwnedReadHalf, OwnedWriteHalf}},
@@ -284,7 +284,6 @@ impl<
     }
 }
 
-#[derive(Debug)]
 pub struct ConnectionWriteHalf<
     M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
     O: bincode::Options + Copy,
@@ -339,5 +338,15 @@ impl<
             self.send().await?
         }
         Ok(())
+    }
+}
+
+impl<M: Serialize + DeserializeOwned, O: Copy + bincode::Options> Debug for ConnectionWriteHalf<M, O> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ConnectionWriteHalf")
+            .field("write_stream", &self.write_stream)
+            .field("pending_send_data", &self.pending_send_data)
+            .field("seri_opts", &"")
+            .finish()
     }
 }

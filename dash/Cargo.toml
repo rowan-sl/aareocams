@@ -9,6 +9,10 @@ edition = "2021"
 anyhow = "1.0.56"
 bincode = "1.3.3"
 sn30pro = "0.2.0"
+thiserror = "1.0"
+
+[dependencies.aareocams-core]
+path = "../core"
 
 [dependencies.aareocams-scomm]
 path = "../scomm"
@@ -23,3 +27,10 @@ features = ["full"]
 [dependencies.serde]
 version = "1.0.136"
 features = ["derive"]
+
+[dependencies.iced]
+git = "https://github.com/iced-rs/iced.git"
+features = ["tokio"]
+
+[dependencies.iced_native]
+git = "https://github.com/iced-rs/iced.git"
