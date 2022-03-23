@@ -1,0 +1,59 @@
+refresh_rate: 60 seconds
+
+appenders:
+  #named stdout, writes to the console
+  stdout:
+    kind: console
+
+  main_file:
+    kind: file
+    path: "logs/dash.log"
+    append: false
+
+  backend:
+    kind: file
+    path: "logs/dash-backend.log"
+    append: false
+
+root:
+  level: trace
+  appenders:
+    - stdout
+    - main_file
+
+loggers:
+  naga:
+    level: warn
+    appenders:
+      - backend
+    additive: false
+
+  wgpu_core:
+    level: info
+    appenders:
+      - backend
+    additive: false
+
+  iced_wgpu:
+    level: info
+    appenders:
+      - backend
+    additive: false
+  
+  wgpu_hal:
+    level: info
+    appenders:
+      - backend
+    additive: false
+
+  mio:
+    level: info
+    appenders:
+      - backend
+    additive: false
+
+  winit:
+    level: info
+    appenders:
+      - backend
+    additive: false

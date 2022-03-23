@@ -11,6 +11,9 @@ extern crate thiserror;
 extern crate tokio;
 #[macro_use]
 extern crate derivative;
+#[macro_use]
+extern crate log;
+extern crate log4rs;
 
 mod stream;
 mod dash;
@@ -25,6 +28,11 @@ mod config {
 }
 
 fn main() -> Result<()> {
+    log4rs::init_file("config/dash-log4rs.yml", Default::default())?;
+
+    info!("Initialized logging");
+
+    // ah yes `::<_>::`
     Dashboard::<_>::run(Settings::with_flags((config::ADDR, config::JOYSTICK_ID)))?;
 
     Ok(())

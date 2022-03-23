@@ -11,6 +11,8 @@ bincode = "1.3.3"
 sn30pro = "0.2.0"
 thiserror = "1.0"
 derivative = "2.2.0"
+log4rs = "1.0.0"
+log = "0.4.16"
 
 [dependencies.aareocams-core]
 path = "../core"

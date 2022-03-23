@@ -61,7 +61,7 @@ pub struct Connection<
 }
 
 impl<
-        M: Serialize + DeserializeOwned, /* message type to be used with the connection, held as a static type for usage seminatics */
+        M: Serialize + DeserializeOwned + Debug, /* message type to be used with the connection, held as a static type for usage seminatics */
         O: bincode::Options + Clone,
     > Connection<M, O>
 {
@@ -90,11 +90,23 @@ impl<
     /// Queue a new message to be sent
     pub fn queue(&mut self, message: &M) -> Result<(), bincode::Error> {
         let header = Header::header_for(message, self.seri_opts.clone())?;
-        let message = self.seri_opts.clone().serialize(message)?;
+
+        debug!("Sending message {:#?}\nwith header {:#?}", message, header);
+
+        let serialized_message = self.seri_opts.clone().serialize(message)?;
+        let header_data: BytesMut = header.serialize_header().into_iter().collect();
+
+        trace!("Serialized header\n{:?}", header_data.to_vec());
+
         self.pending_send_data
-            .push_front(header.serialize_header().into_iter().collect());
+            .push_front(header_data);
+
+        let message_data: BytesMut = serialized_message.into_iter().collect();
+
+        trace!("Serialized message\n{:?}", message_data.to_vec());
+
         self.pending_send_data
-            .push_front(message.into_iter().collect());
+            .push_front(message_data);
         Ok(())
     }
 
@@ -134,13 +146,21 @@ impl<
         match self.current_message_header.clone() {
             None => {
                 if self.pending_recv_data.len() >= Header::<M, O>::header_byte_size() {
-                    self.current_message_header = Some(Header::<M, O>::decode_from_bytes(
-                        &self
-                            .pending_recv_data
-                            .drain(..Header::<M, O>::header_byte_size())
-                            .collect::<Vec<u8>>(),
+                    let bytes = &self
+                        .pending_recv_data
+                        .drain(..Header::<M, O>::header_byte_size())
+                        .collect::<Vec<u8>>();
+                    
+                    trace!("Decoding header from {:?}", bytes);
+
+                    let header = Header::<M, O>::decode_from_bytes(
+                        bytes,
                         self.seri_opts.clone(),
-                    )?);
+                    )?;
+
+                    trace!("Decoded header:\n{:#?}", header);
+
+                    self.current_message_header = Some(header);
                 }
                 Ok(false)
             }
@@ -150,8 +170,16 @@ impl<
                         .pending_recv_data
                         .drain(..header.size() as usize)
                         .collect::<Vec<u8>>();
+
+                    trace!("Decoding message from {:?}", data);
+
                     let message = self.seri_opts.clone().deserialize(&data)?;
+
+                    debug!("Decoded message {:?}", message);
+
                     self.pending_received.push_front(message);
+
+                    self.current_message_header = None;
                     Ok(true)
                 } else {
                     Ok(false)
