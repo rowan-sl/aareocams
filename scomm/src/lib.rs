@@ -5,10 +5,10 @@ extern crate thiserror;
 extern crate tokio;
 #[macro_use]
 extern crate derivative;
-#[macro_use]
+// #[macro_use]
 extern crate log;
 
 pub mod connection;
 pub mod header;
 
-pub use connection::Connection;
+pub use connection::Stream;

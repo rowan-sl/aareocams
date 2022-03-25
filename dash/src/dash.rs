@@ -1,12 +1,14 @@
+use crate::stream;
 use aareocams_net::Message;
-use iced::{Application, Command, Subscription, button::{self, Button}, Text};
+use iced::{
+    button::{self, Button},
+    Application, Command, Subscription, Text,
+};
 use std::fmt::Debug;
 use tokio::{
     net::ToSocketAddrs,
     sync::{mpsc, oneshot},
 };
-use crate::stream;
-
 
 #[derive(Debug)]
 pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
@@ -16,7 +18,7 @@ pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
 
 #[derive(Debug, Clone)]
 pub enum Interaction {
-    Click
+    Click,
 }
 
 pub struct GUIState {
@@ -54,7 +56,7 @@ where
                 sender_channel: None,
                 close_sender: None,
                 gui: GUIState {
-                    clicky: button::State::new()
+                    clicky: button::State::new(),
                 },
                 exit: false,
             },
@@ -77,7 +79,10 @@ where
                 dbg!(&socket_event);
 
                 match socket_event {
-                    Event::Init { close_sig_send, msg_send } => {
+                    Event::Init {
+                        close_sig_send,
+                        msg_send,
+                    } => {
                         self.sender_channel = Some(msg_send);
                         self.close_sender = Some(close_sig_send);
                     }
@@ -85,7 +90,7 @@ where
                         eprintln!("Error sending message\n{:#?}", e);
                         self.exit = true;
                     }
-                    _ => {},
+                    _ => {}
                 }
             }
             GUIMsg::Interaction(interaction_event) => {
@@ -110,7 +115,7 @@ where
         let root: iced::Element<Interaction> = iced::Column::new()
             .push(
                 Button::new(&mut self.gui.clicky, Text::new("Click me!"))
-                    .on_press(Interaction::Click)
+                    .on_press(Interaction::Click),
             )
             .into();
         root.map(Self::Message::Interaction)

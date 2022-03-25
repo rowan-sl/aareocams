@@ -15,8 +15,8 @@ extern crate derivative;
 extern crate log;
 extern crate log4rs;
 
-mod stream;
 mod dash;
+mod stream;
 
 use anyhow::Result;
 use dash::Dashboard;

@@ -1,7 +1,4 @@
-use aareocams_scomm::{
-    connection::{ConnectionRecvError, ConnectionSendError},
-    Connection,
-};
+use aareocams_scomm::{Stream, connection};
 use iced_native::subscription::{self, Subscription};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
@@ -13,14 +10,12 @@ use tokio::{
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error<A: ToSocketAddrs> {
-    #[error("Failed to receive message {0}")]
-    RecvErr(#[from] ConnectionRecvError),
-    #[error("Failed to send message {0}")]
-    SendErr(#[from] ConnectionSendError),
-    #[error("Failed to serialize message {0}")]
-    SeriErr(#[from] bincode::Error),
+    #[error("Failed to queue message to be sent:\n{0}")]
+    Queue(#[from] connection::QueueError),
+    #[error("Failed to update stream:\n{0}")]
+    Update(#[from] connection::StreamUpdateErr),
     #[error("Failed to connect to {0}:\n{1}")]
-    ConnectionErr(A, io::Error),
+    Connection(A, io::Error),
     #[error("Message sender stream closed before a close event was received!")]
     MessageChannelClosed,
 }
@@ -36,8 +31,7 @@ pub enum Event<A: ToSocketAddrs + Debug, M: Serialize + DeserializeOwned + Debug
     },
     Received(M),
     Closed {
-        #[derivative(Debug = "ignore")]
-        stream: Connection<M, bincode::DefaultOptions>,
+        stream: Stream<M, bincode::DefaultOptions>,
     },
 }
 
@@ -46,7 +40,7 @@ enum State<A: ToSocketAddrs, M: Serialize + DeserializeOwned> {
         ip: A,
     },
     Running {
-        stream: Connection<M, bincode::DefaultOptions>,
+        stream: Stream<M, bincode::DefaultOptions>,
         close_sig_recv: oneshot::Receiver<()>,
         msg_recv: mpsc::UnboundedReceiver<M>,
     },
@@ -54,6 +48,7 @@ enum State<A: ToSocketAddrs, M: Serialize + DeserializeOwned> {
 }
 
 pub fn like_and_subscribe<
+    's,
     A: ToSocketAddrs + Clone + Sync + Debug + Send + 'static,
     M: Serialize + DeserializeOwned + Debug + Send + 'static,
 >(
@@ -71,12 +66,12 @@ pub fn like_and_subscribe<
                         Ok(s) => s,
                         Err(e) => {
                             return (
-                                Some(Event::Error(Error::ConnectionErr(ip, e))),
+                                Some(Event::Error(Error::Connection(ip, e))),
                                 State::Closed,
                             );
                         }
                     };
-                    let connection = Connection::<M, bincode::DefaultOptions>::new(
+                    let connection = Stream::<M, bincode::DefaultOptions>::new(
                         stream,
                         bincode::DefaultOptions::new(),
                     );
@@ -99,17 +94,12 @@ pub fn like_and_subscribe<
                     ref mut close_sig_recv,
                     ref mut msg_recv,
                 } => {
-                    if let Some(message) = stream.get() {
-                        return (Some(Event::Received(message)), state);
-                    }
-
-                    if let Err(e) = stream.send().await {
-                        return (Some(Event::Error(e.into())), State::Closed);
-                    }
-
-                    select!(
+                    if let Some(msg) = stream.get() {
+                        return (Some(Event::Received(msg)), state);
+                    } 
+                    select! {
                         to_send = msg_recv.recv() => {
-                            println!("Sending message\n{:#?}", to_send);
+                            debug!("Sending message\n{:#?}", to_send);
                             if let Some(msg) = to_send {
                                 if let Err(e) = stream.queue(&msg) {
                                     return (
@@ -125,31 +115,38 @@ pub fn like_and_subscribe<
                             }
                         }
                         _ = close_sig_recv => {
+                            let stream = match state {
+                                State::Running {stream, ..} => {
+                                    stream
+                                }
+                                _ => unreachable!()
+                            };
                             return (
                                 Some(Event::Closed {
-                                    stream: match state {
-                                        State::Running {stream, ..} => stream,
-                                        _ => unreachable!()
-                                    }
+                                    stream,
                                 }),
                                 State::Closed,
                             )
                         }
-                        res = stream.recv() => {
+                        res = stream.update_loop() => {
                             match res {
-                                Ok(message_received) => {
-                                    if message_received {
-                                        if let Some(message) = stream.get() {
-                                            return (Some(Event::Received(message)), state)
-                                        }
+                                Ok(true) => {
+                                    if let Some(msg) = stream.get() {
+                                        return (Some(Event::Received(msg)), state);
+                                    } else {
+                                        unreachable!();
                                     }
                                 }
+                                Ok(_) => unreachable!(),
                                 Err(e) => {
-                                    return (Some(Event::Error(e.into())), State::Closed)
+                                    return (
+                                        Some(Event::Error(e.into())),
+                                        State::Closed
+                                    )
                                 }
                             }
                         }
-                    );
+                    }
                     (None, state)
                 }
                 State::Closed => (None, State::Closed),
