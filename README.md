@@ -19,6 +19,7 @@ This is set up as a cargo workspace, with different sub-programs and libraries a
 - `dash`: final dashboard executable for controlling the robot
 - `net`: project spacific networking code
 - `scomm`: more general networking code, you can use this in your own project if you want
+- `core`: logic and code used by **all** crates in this project, depends on no other crate in this project
 
 ## Compiling
 
@@ -30,8 +31,8 @@ currently there is realy no point, as you need the robot to use it ¯\\\_(ツ)_/
 
 to build, use `make all` to build all targets, or one of the many available commands listed here:
 
-- `make all` build all targets
 - `make debug` build the debug target
 - `make release` build the release target
-- `make run-dash` build in release and run the dashboard program
 - `make clean` clean up all build artifacts
+
+the produced executables will be moved to subdirectories in the `build/` based on what target they were built for.
