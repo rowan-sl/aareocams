@@ -99,7 +99,6 @@ pub fn like_and_subscribe<
                     } 
                     select! {
                         to_send = msg_recv.recv() => {
-                            debug!("Sending message\n{:#?}", to_send);
                             if let Some(msg) = to_send {
                                 if let Err(e) = stream.queue(&msg) {
                                     return (
