@@ -1,12 +1,10 @@
 [workspace]
 members = [
-    "core", #   aareocams-core
-    "scomm", #  aareocams-scomm
-    "net", #    aareocams-net
-    #"client", # aareocams-client
-    #"server", # aareocams-server
-    "dash", #   aareocams-dash
-    "bot", #    aareocams-bot
+    "code/core", #   aareocams-core
+    "code/scomm", #  aareocams-scomm
+    "code/net", #    aareocams-net
+    "code/dash", #   aareocams-dash
+    "code/bot", #    aareocams-bot
 ]
 resolver = "2"
 
