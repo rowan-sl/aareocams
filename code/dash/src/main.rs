@@ -33,7 +33,7 @@ fn main() -> Result<()> {
     info!("Initialized logging");
 
     // ah yes `::<_>::`
-    Dashboard::<_>::run(Settings::with_flags((config::ADDR, config::JOYSTICK_ID)))?;
+    Dashboard::<&str>::run(Settings::with_flags((config::ADDR, config::JOYSTICK_ID,)))?;
 
     Ok(())
 }

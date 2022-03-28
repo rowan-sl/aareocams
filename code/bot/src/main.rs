@@ -33,7 +33,6 @@ pub trait Encoder {
     fn net_change(&self) -> usize;
 }
 
-
 /// a simple motor controller implementation.
 ///
 /// minimum speed is 0, maximum speed is 100, and can be made negative to reverse the motor
@@ -59,23 +58,27 @@ async fn main() -> Result<()> {
     info!("Initialized logging");
 
     let listener = TcpListener::bind(config::ADDR).await?;
-    let (raw_conn, _port) = listener.accept().await?;
-    let mut conn = Stream::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());
-
     loop {
-        conn.update_loop().await?;
-        println!(
-            "{:?}",
-            match conn.get() {
-                Some(Message::DashboardDisconnect) => {
-                    println!("Dashboard disconnected, exiting");
-                    break;
-                }
-                Some(m) => m,
-                None => continue,
-            }
-        );
-    }
+        info!("Listening for a new connection");
+        let (raw_conn, _port) = listener.accept().await?;
+        let mut conn = Stream::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());
 
-    Ok(())
+        loop {
+            if let Err(e) = conn.update_loop().await {
+                error!("{:?}", e);
+                break;
+            }
+            info!(
+                "{:?}",
+                match conn.get() {
+                    Some(Message::DashboardDisconnect) => {
+                        info!("Dashboard disconnected");
+                        break;
+                    }
+                    Some(m) => m,
+                    None => continue,
+                }
+            );
+        }
+    }
 }

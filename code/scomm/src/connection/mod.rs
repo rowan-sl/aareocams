@@ -1,14 +1,13 @@
-pub mod ser;
 pub mod read;
+pub mod ser;
 pub mod write;
 
 pub use read::SocketReader;
-pub use write::{SocketWriter, QueueError};
+pub use write::{QueueError, SocketWriter};
 
-use serde::{Serialize, de::DeserializeOwned};
 use bincode::Options as BincodeOptions;
+use serde::{de::DeserializeOwned, Serialize};
 use tokio::{net::TcpStream, select};
-
 
 #[derive(Debug, thiserror::Error)]
 pub enum StreamUpdateErr {
@@ -51,8 +50,13 @@ impl<M: Serialize + DeserializeOwned, O: BincodeOptions + Clone> Stream<M, O> {
         loop {
             if self.reader.update().await? {
                 return Ok(true);
-            } 
+            }
         }
+    }
+
+    pub async fn write_all(&mut self) -> Result<(), write::UpdateError> {
+        while !self.writer.update().await? {}
+        Ok(())
     }
 
     pub fn queue(&mut self, msg: &M) -> Result<(), QueueError> {

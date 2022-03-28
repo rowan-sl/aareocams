@@ -1,12 +1,9 @@
-use aareocams_scomm::{Stream, connection};
+use aareocams_scomm::{connection, Stream};
 use iced_native::subscription::{self, Subscription};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
 use tokio::{io, net::ToSocketAddrs, select};
-use tokio::{
-    net::TcpStream,
-    sync::{mpsc, oneshot},
-};
+use tokio::{net::TcpStream, sync::mpsc};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error<A: ToSocketAddrs> {
@@ -16,8 +13,20 @@ pub enum Error<A: ToSocketAddrs> {
     Update(#[from] connection::StreamUpdateErr),
     #[error("Failed to connect to {0}:\n{1}")]
     Connection(A, io::Error),
+    #[error("Write error while flushing connection")]
+    Flush(connection::write::UpdateError),
+    // these are unrecoverable errors
     #[error("Message sender stream closed before a close event was received!")]
     MessageChannelClosed,
+    #[error("Stream controll channel closed before a close event was received!")]
+    StreamCtrlChClosed,
+}
+
+#[derive(Debug, Clone)]
+pub enum StreamControllMsg<A: ToSocketAddrs + Debug> {
+    ConnectTo(A),
+    Disconnect,
+    Flush,
 }
 
 #[derive(Derivative)]
@@ -25,107 +34,185 @@ pub enum Error<A: ToSocketAddrs> {
 pub enum Event<A: ToSocketAddrs + Debug, M: Serialize + DeserializeOwned + Debug> {
     Error(Error<A>),
     Init {
-        /// closes the channel, sending all pending data and returning the Connection
-        close_sig_send: oneshot::Sender<()>,
         msg_send: mpsc::UnboundedSender<M>,
+        ctrl_send: mpsc::UnboundedSender<StreamControllMsg<A>>,
     },
+    ConnectedTo(A),
+    /// response to [`StreamControllMsg::Disconnect`]
     Received(M),
-    Closed {
-        stream: Stream<M, bincode::DefaultOptions>,
-    },
 }
 
-enum State<A: ToSocketAddrs, M: Serialize + DeserializeOwned> {
-    Uninitialized {
-        ip: A,
+enum State<A: ToSocketAddrs + Debug, M: Serialize + DeserializeOwned> {
+    Uninitialized,
+    Ready {
+        msg_recv: mpsc::UnboundedReceiver<M>,
+        ctrl_recv: mpsc::UnboundedReceiver<StreamControllMsg<A>>,
     },
     Running {
         stream: Stream<M, bincode::DefaultOptions>,
-        close_sig_recv: oneshot::Receiver<()>,
         msg_recv: mpsc::UnboundedReceiver<M>,
+        ctrl_recv: mpsc::UnboundedReceiver<StreamControllMsg<A>>,
     },
-    Closed,
+    UnrecoverableExit,
 }
 
 pub fn like_and_subscribe<
     's,
     A: ToSocketAddrs + Clone + Sync + Debug + Send + 'static,
     M: Serialize + DeserializeOwned + Debug + Send + 'static,
->(
-    ip: A,
-) -> Subscription<Event<A, M>> {
+>() -> Subscription<Event<A, M>> {
     struct ID;
 
     subscription::unfold(
         std::any::TypeId::of::<ID>(),
-        State::Uninitialized { ip },
+        State::Uninitialized,
         move |mut state: State<A, M>| async move {
             match state {
-                State::Uninitialized { ip } => {
-                    let stream = match TcpStream::connect(ip.clone()).await {
-                        Ok(s) => s,
-                        Err(e) => {
-                            return (
-                                Some(Event::Error(Error::Connection(ip, e))),
-                                State::Closed,
-                            );
-                        }
-                    };
-                    let connection = Stream::<M, bincode::DefaultOptions>::new(
-                        stream,
-                        bincode::DefaultOptions::new(),
-                    );
-                    let (close_tx, close_rx) = oneshot::channel();
+                State::Uninitialized => {
+                    let (ctrl_send, ctrl_recv) = mpsc::unbounded_channel();
                     let (msg_tx, msg_rx) = mpsc::unbounded_channel();
                     (
                         Some(Event::Init {
-                            close_sig_send: close_tx,
                             msg_send: msg_tx,
+                            ctrl_send,
                         }),
-                        State::Running {
-                            stream: connection,
-                            close_sig_recv: close_rx,
+                        State::Ready {
                             msg_recv: msg_rx,
+                            ctrl_recv,
                         },
                     )
                 }
+                State::Ready {
+                    msg_recv,
+                    mut ctrl_recv,
+                } => {
+                    if let Some(msg) = ctrl_recv.recv().await {
+                        match msg {
+                            StreamControllMsg::ConnectTo(addr) => {
+                                let stream = match TcpStream::connect(addr.clone()).await {
+                                    Ok(s) => s,
+                                    Err(e) => {
+                                        return (
+                                            Some(Event::Error(Error::Connection(addr.clone(), e))),
+                                            State::Ready {
+                                                ctrl_recv,
+                                                msg_recv,
+                                            },
+                                        );
+                                    }
+                                };
+                                let connection = Stream::<M, bincode::DefaultOptions>::new(
+                                    stream,
+                                    bincode::DefaultOptions::new(),
+                                );
+                                (
+                                    Some(Event::ConnectedTo(addr)),
+                                    State::Running {
+                                        stream: connection,
+                                        msg_recv,
+                                        ctrl_recv,
+                                    },
+                                )
+                            }
+                            StreamControllMsg::Disconnect => {
+                                warn!("Attempted to disconnect, but was not connected");
+                                return (
+                                    None,
+                                    State::Ready {
+                                        ctrl_recv,
+                                        msg_recv,
+                                    },
+                                );
+                            }
+                            StreamControllMsg::Flush => {
+                                warn!("Attempted to flush, but was not connected!");
+                                return (
+                                    None,
+                                    State::Ready {
+                                        ctrl_recv,
+                                        msg_recv,
+                                    },
+                                );
+                            }
+                        }
+                    } else {
+                        return (
+                            Some(Event::Error(Error::StreamCtrlChClosed)),
+                            State::UnrecoverableExit,
+                        );
+                    }
+                }
                 State::Running {
                     ref mut stream,
-                    ref mut close_sig_recv,
                     ref mut msg_recv,
+                    ref mut ctrl_recv,
                 } => {
                     if let Some(msg) = stream.get() {
                         return (Some(Event::Received(msg)), state);
-                    } 
+                    }
                     select! {
                         to_send = msg_recv.recv() => {
                             if let Some(msg) = to_send {
                                 if let Err(e) = stream.queue(&msg) {
-                                    return (
-                                        Some(Event::Error(e.into())),
-                                        State::Closed
-                                    )
+                                    if let State::Running {msg_recv, ctrl_recv, ..} = state {
+                                        return (
+                                            Some(Event::Error(e.into())),
+                                            State::Ready {
+                                                msg_recv,
+                                                ctrl_recv,
+                                            },
+                                        )
+                                    }
+                                    unreachable!()
                                 }
                             } else {
                                 return (
                                     Some(Event::Error(Error::MessageChannelClosed)),
-                                    State::Closed
+                                    State::UnrecoverableExit
                                 )
                             }
                         }
-                        _ = close_sig_recv => {
-                            let stream = match state {
-                                State::Running {stream, ..} => {
-                                    stream
+                        ctrl_update = ctrl_recv.recv() => {
+                            if let Some(update) = ctrl_update {
+                                match update {
+                                    StreamControllMsg::ConnectTo(..) => {
+                                        warn!("Attempted to connect while already connected");
+                                        return (
+                                            None,
+                                            state,
+                                        )
+                                    }
+                                    StreamControllMsg::Disconnect => {
+                                        if let State::Running { msg_recv, ctrl_recv, .. } = state {
+                                            //TODO make this shutdown the stream more nicely
+                                            return (
+                                                None,
+                                                State::Ready { msg_recv, ctrl_recv }
+                                            )
+                                        } else {
+                                            unreachable!()
+                                        }
+                                    }
+                                    StreamControllMsg::Flush => {
+
+                                        if let Err(e) = stream.write_all().await {
+                                            if let State::Running { msg_recv, ctrl_recv, .. } = state {
+                                                return (
+                                                    Some(Event::Error(Error::Flush(e))),
+                                                    State::Ready { msg_recv, ctrl_recv }
+                                                )
+                                            } else {
+                                                unreachable!()
+                                            }
+                                        }
+                                    }
                                 }
-                                _ => unreachable!()
-                            };
-                            return (
-                                Some(Event::Closed {
-                                    stream,
-                                }),
-                                State::Closed,
-                            )
+                            } else {
+                                return (
+                                    Some(Event::Error(Error::StreamCtrlChClosed)),
+                                    State::UnrecoverableExit
+                                )
+                            }
                         }
                         res = stream.update_loop() => {
                             match res {
@@ -138,17 +225,23 @@ pub fn like_and_subscribe<
                                 }
                                 Ok(_) => unreachable!(),
                                 Err(e) => {
-                                    return (
-                                        Some(Event::Error(e.into())),
-                                        State::Closed
-                                    )
+                                    if let State::Running {msg_recv, ctrl_recv, ..} = state {
+                                        return (
+                                            Some(Event::Error(e.into())),
+                                            State::Ready {
+                                                msg_recv,
+                                                ctrl_recv,
+                                            },
+                                        )
+                                    }
+                                    unreachable!()
                                 }
                             }
                         }
                     }
                     (None, state)
                 }
-                State::Closed => (None, State::Closed),
+                State::UnrecoverableExit => (None, State::UnrecoverableExit),
             }
         },
     )

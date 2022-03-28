@@ -1,6 +1,6 @@
 mod keyboard;
 
-use crate::stream;
+use crate::stream::{self, StreamControllMsg};
 use aareocams_net::Message;
 use iced::{
     button::{self, Button},
@@ -9,7 +9,7 @@ use iced::{
 use std::fmt::Debug;
 use tokio::{
     net::ToSocketAddrs,
-    sync::{mpsc, oneshot},
+    sync::mpsc,
 };
 
 #[derive(Debug)]
@@ -22,22 +22,29 @@ pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
 #[derive(Debug, Clone)]
 pub enum Interaction {
     Click,
+    Connect,
+    Disconnect,
 }
 
 pub struct GUIState {
     clicky: button::State,
+    connect: button::State,
+    disconnect: button::State,
+}
+
+struct StreamInterface<A: ToSocketAddrs + Debug> {
+    /// channel to send messages, gets passed on to the socket
+    pub msg_send: mpsc::UnboundedSender<Message>,
+    pub ctrl_send: mpsc::UnboundedSender<stream::StreamControllMsg<A>>,
 }
 
 pub struct Dashboard<A>
 where
-    A: tokio::net::ToSocketAddrs,
+    A: tokio::net::ToSocketAddrs + Debug,
 {
-    /// address used to connect to the bot
     addr: A,
-    /// channel to send messages, gets passed on to the socket
-    sender_channel: Option<mpsc::UnboundedSender<Message>>,
-    /// channel to close the sender
-    close_sender: Option<oneshot::Sender<()>>,
+    /// holds all communication elements with the stream subscription
+    stream: Option<StreamInterface<A>>,
     /// the state for all GUI elements
     gui: GUIState,
     exit: bool,
@@ -56,10 +63,11 @@ where
         (
             Self {
                 addr: flags.0,
-                sender_channel: None,
-                close_sender: None,
+                stream: None,
                 gui: GUIState {
                     clicky: button::State::new(),
+                    connect: button::State::new(),
+                    disconnect: button::State::new(),
                 },
                 exit: false,
             },
@@ -69,7 +77,7 @@ where
 
     fn subscription(&self) -> Subscription<Self::Message> {
         Subscription::batch(vec![
-            stream::like_and_subscribe(self.addr.clone()).map(GUIMsg::Socket),
+            stream::like_and_subscribe().map(GUIMsg::Socket),
             keyboard::events().map(GUIMsg::Keyboard),
         ])
     }
@@ -86,11 +94,13 @@ where
 
                 match socket_event {
                     Event::Init {
-                        close_sig_send,
                         msg_send,
+                        ctrl_send,
                     } => {
-                        self.sender_channel = Some(msg_send);
-                        self.close_sender = Some(close_sig_send);
+                        self.stream = Some(StreamInterface {
+                            msg_send,
+                            ctrl_send,
+                        });
                     }
                     Event::Error(e) => {
                         eprintln!("Error sending message\n{:#?}", e);
@@ -102,8 +112,20 @@ where
             GUIMsg::Interaction(interaction_event) => {
                 match interaction_event {
                     Interaction::Click => {
-                        if let Some(ref mut sender) = self.sender_channel {
-                            sender.send(Message::Click).unwrap();
+                        if let Some(ref mut stream) = self.stream {
+                            stream.msg_send.send(Message::Click).unwrap();
+                        }
+                    }
+                    Interaction::Connect => {
+                        if let Some(ref mut stream) = self.stream {
+                            stream.ctrl_send.send(StreamControllMsg::ConnectTo(self.addr.clone())).unwrap();
+                        }
+                    }
+                    Interaction::Disconnect => {
+                        if let Some(ref mut stream) = self.stream {
+                            stream.msg_send.send(Message::DashboardDisconnect).unwrap();
+                            stream.ctrl_send.send(StreamControllMsg::Flush).unwrap();
+                            stream.ctrl_send.send(StreamControllMsg::Disconnect).unwrap();
                         }
                     }
                 }
@@ -125,6 +147,14 @@ where
             .push(
                 Button::new(&mut self.gui.clicky, Text::new("Click me!"))
                     .on_press(Interaction::Click),
+            )
+            .push(
+                Button::new(&mut self.gui.connect, Text::new("connect"))
+                .on_press(Interaction::Connect),
+            )
+            .push(
+                Button::new(&mut self.gui.disconnect, Text::new("disconnect"))
+                .on_press(Interaction::Disconnect),
             )
             .into();
         root.map(Self::Message::Interaction)

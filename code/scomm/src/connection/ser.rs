@@ -1,8 +1,7 @@
 use bincode::Options as BincodeOptions;
 use bytes::BytesMut;
-use serde::{de::DeserializeOwned, Serialize, Deserialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{collections::VecDeque, marker::PhantomData};
-
 
 #[derive(Debug, thiserror::Error)]
 #[error("Failed to deserialize message:\n{e}")]
@@ -17,7 +16,7 @@ pub struct Reader<M: Serialize + DeserializeOwned, O: BincodeOptions + Clone> {
     buf: BytesMut,
     next_msg_len: Option<u64>,
     received: VecDeque<M>,
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     opts: O,
 }
 
@@ -63,8 +62,8 @@ impl<M: Serialize + DeserializeOwned, O: BincodeOptions + Clone> Reader<M, O> {
                 let data: [u8; HEADER_SIZE] = <dyn std::ops::Deref<Target = [u8]>>::deref(
                     &self.buf.split_to(HEADER_SIZE).freeze(),
                 )
-                    .try_into()
-                    .unwrap();
+                .try_into()
+                .unwrap();
                 let size = u64::from_be_bytes(data);
                 self.next_msg_len = Some(size);
                 self.update()
@@ -98,9 +97,9 @@ pub struct WriterSinkErr {
 #[derivative(Debug)]
 pub struct Writer<M: Serialize + DeserializeOwned, O: BincodeOptions + Clone> {
     buf: BytesMut,
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     opts: O,
-    #[derivative(Debug="ignore")]
+    #[derivative(Debug = "ignore")]
     _m: PhantomData<M>,
 }
 

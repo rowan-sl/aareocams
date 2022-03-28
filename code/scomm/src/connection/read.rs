@@ -1,8 +1,11 @@
 use super::ser::Reader;
 pub use super::ser::UpdateReaderError;
-use serde::{Serialize, de::DeserializeOwned};
 use bincode::Options as BincodeOptions;
-use tokio::{net::tcp::OwnedReadHalf, io::{AsyncReadExt, self}};
+use serde::{de::DeserializeOwned, Serialize};
+use tokio::{
+    io::{self, AsyncReadExt},
+    net::tcp::OwnedReadHalf,
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum UpdateError {
@@ -57,4 +60,3 @@ impl<M: Serialize + DeserializeOwned, O: BincodeOptions + Clone> SocketReader<M,
         }
     }
 }
-

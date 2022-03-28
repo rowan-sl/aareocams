@@ -1,8 +1,11 @@
 use super::ser::Writer;
 pub use super::ser::WriterSinkErr;
-use serde::{Serialize, de::DeserializeOwned};
 use bincode::Options as BincodeOptions;
-use tokio::{net::tcp::OwnedWriteHalf, io::{AsyncWriteExt, self}};
+use serde::{de::DeserializeOwned, Serialize};
+use tokio::{
+    io::{self, AsyncWriteExt},
+    net::tcp::OwnedWriteHalf,
+};
 
 #[derive(Debug, thiserror::Error)]
 #[error("Failed to queue a message:\n{0}")]
@@ -40,9 +43,9 @@ impl<M: Serialize + DeserializeOwned, O: BincodeOptions + Clone> SocketWriter<M,
     }
 
     /// Writes all of the buffered data into the socket
-    /// 
+    ///
     /// returns if writing is done
-    /// 
+    ///
     /// # Cancel saftey
     /// this method IS cancel safe, if used in a select! statement, it is guareteed that the writing will continue sucessfully the next time this method is called
     pub async fn update(&mut self) -> Result<bool, UpdateError> {
@@ -54,13 +57,10 @@ impl<M: Serialize + DeserializeOwned, O: BincodeOptions + Clone> SocketWriter<M,
                     Ok(true)
                 }
             }
-            Ok(_) => {
-                Ok(false)
-            }
+            Ok(_) => Ok(false),
             Err(e) => {
                 return Err(UpdateError::WriteErr(e));
             }
         }
     }
 }
-
