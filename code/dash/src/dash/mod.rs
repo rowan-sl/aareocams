@@ -1,3 +1,5 @@
+mod keyboard;
+
 use crate::stream;
 use aareocams_net::Message;
 use iced::{
@@ -13,6 +15,7 @@ use tokio::{
 #[derive(Debug)]
 pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
     Socket(stream::Event<A, Message>),
+    Keyboard(keyboard::Event),
     Interaction(Interaction),
 }
 
@@ -65,7 +68,10 @@ where
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        stream::like_and_subscribe(self.addr.clone()).map(GUIMsg::Socket)
+        Subscription::batch(vec![
+            stream::like_and_subscribe(self.addr.clone()).map(GUIMsg::Socket),
+            keyboard::events().map(GUIMsg::Keyboard),
+        ])
     }
 
     fn title(&self) -> String {
@@ -102,6 +108,9 @@ where
                     }
                 }
                 dbg!(interaction_event);
+            }
+            GUIMsg::Keyboard(_keyboard_event) => {
+
             }
         }
         Command::none()
