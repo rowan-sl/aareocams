@@ -5,7 +5,8 @@ extern crate thiserror;
 extern crate tokio;
 #[macro_use]
 extern crate derivative;
-// #[macro_use]
+#[allow(unused_imports)]
+#[macro_use]
 extern crate log;
 
 pub mod connection;

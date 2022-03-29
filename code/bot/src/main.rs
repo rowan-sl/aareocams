@@ -2,7 +2,7 @@ extern crate aareocams_net;
 extern crate aareocams_scomm;
 extern crate anyhow;
 extern crate bincode;
-extern crate env_logger;
+extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
 #[macro_use]
@@ -49,11 +49,9 @@ pub trait MotorController {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    env_logger::try_init_from_env(
-        env_logger::Env::new()
-            .default_filter_or("TRACE")
-            .default_write_style_or("AUTO"),
-    )?;
+    pretty_env_logger::formatted_builder()
+        .filter_level(log::LevelFilter::Debug)
+        .init();
 
     info!("Initialized logging");
 
@@ -69,7 +67,7 @@ async fn main() -> Result<()> {
                 break;
             }
             info!(
-                "{:?}",
+                "received: {:?}",
                 match conn.get() {
                     Some(Message::DashboardDisconnect) => {
                         info!("Dashboard disconnected");
