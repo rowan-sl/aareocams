@@ -2,7 +2,28 @@
 # multitarget = true
 
 # [build]
-# target = ["nightly", "armv7-unknown-linux-gnueabihf"]
+# target = ["x86_64-unknown-linux-gnu", "armv7-unknown-linux-gnueabihf"]
 
+[alias]
+run-dash = "run --bin aareocams-dash"
+
+# use LLD as a linker for faster builds - configuration taken from https://github.com/bevyengine/bevy/blob/main/.cargo/config_fast_builds
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-Clink-arg=-fuse-ld=lld", "-Zshare-generics=y"]
+
+# NOTE: you must manually install https://github.com/michaeleisel/zld on mac. you can easily do this with the "brew" package manager:
+# `brew install michaeleisel/zld/zld`
+[target.x86_64-apple-darwin]
+rustflags = ["-C", "link-arg=-fuse-ld=/opt/homebrew/bin/zld", "-Zshare-generics=y"]
+
+[target.aarch64-apple-darwin]
+rustflags = ["-C", "link-arg=-fuse-ld=/opt/homebrew/bin/zld", "-Zshare-generics=y"]
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+rustflags = ["-Zshare-generics=n"]
+
+# use the right linker for the raspberry pi target
 [target.armv7-unknown-linux-gnueabihf]
 linker = "arm-linux-gnueabihf-gcc"
