@@ -1,11 +1,11 @@
 extern crate aareocams_net;
 extern crate aareocams_scomm;
+extern crate adafruit_motorkit;
 extern crate anyhow;
 extern crate bincode;
 extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
-extern crate adafruit_motorkit;
 #[macro_use]
 extern crate log;
 
@@ -14,11 +14,9 @@ use aareocams_scomm::Stream;
 use anyhow::Result;
 use tokio::net::TcpListener;
 
-
 mod config {
     pub const ADDR: &str = "127.0.0.1:6440";
 }
-
 
 #[tokio::main]
 async fn main() -> Result<()> {

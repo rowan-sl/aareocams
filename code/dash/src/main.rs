@@ -5,11 +5,12 @@ extern crate anyhow;
 extern crate bincode;
 extern crate iced;
 extern crate iced_native;
+extern crate iced_video_player;
 extern crate serde;
 extern crate sn30pro;
 extern crate thiserror;
 extern crate tokio;
-extern crate iced_video_player;
+extern crate url;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
@@ -34,7 +35,7 @@ fn main() -> Result<()> {
     info!("Initialized logging");
 
     // ah yes `::<_>::`
-    Dashboard::<&str>::run(Settings::with_flags((config::ADDR, config::JOYSTICK_ID,)))?;
+    Dashboard::<&str>::run(Settings::with_flags((config::ADDR, config::JOYSTICK_ID)))?;
 
     Ok(())
 }

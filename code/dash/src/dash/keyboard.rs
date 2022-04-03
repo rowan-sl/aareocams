@@ -1,4 +1,8 @@
-use iced_native::{Subscription, subscription, event::{Event as IcedEvent, Status}, keyboard::{Event as KeyEvent, KeyCode, Modifiers}};
+use iced_native::{
+    event::{Event as IcedEvent, Status},
+    keyboard::{Event as KeyEvent, KeyCode, Modifiers},
+    subscription, Subscription,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyChange {
@@ -7,9 +11,7 @@ pub enum KeyChange {
 }
 
 #[derive(Debug, Clone)]
-pub struct Event {
-
-}
+pub struct Event {}
 
 fn handle_event(code: KeyCode, mods: Modifiers, change: KeyChange) -> Option<Event> {
     println!("{:?} {:?} {:?}", code, mods, change);
@@ -22,18 +24,18 @@ pub fn events() -> Subscription<Event> {
             None
         } else {
             match raw_event {
-                IcedEvent::Keyboard(kbd_event) => {
-                    match kbd_event {
-                        KeyEvent::KeyPressed { key_code, modifiers } => {
-                            handle_event(key_code, modifiers, KeyChange::Press)
-                        }
-                        KeyEvent::KeyReleased { key_code, modifiers } => {
-                            handle_event(key_code, modifiers, KeyChange::Release)
-                        }
-                        _ => None
-                    }
-                }
-                _ => None
+                IcedEvent::Keyboard(kbd_event) => match kbd_event {
+                    KeyEvent::KeyPressed {
+                        key_code,
+                        modifiers,
+                    } => handle_event(key_code, modifiers, KeyChange::Press),
+                    KeyEvent::KeyReleased {
+                        key_code,
+                        modifiers,
+                    } => handle_event(key_code, modifiers, KeyChange::Release),
+                    _ => None,
+                },
+                _ => None,
             }
         }
     })

@@ -7,10 +7,7 @@ use iced::{
     Application, Command, Subscription, Text,
 };
 use std::fmt::Debug;
-use tokio::{
-    net::ToSocketAddrs,
-    sync::mpsc,
-};
+use tokio::{net::ToSocketAddrs, sync::mpsc};
 
 #[derive(Debug)]
 pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
@@ -118,22 +115,26 @@ where
                     }
                     Interaction::Connect => {
                         if let Some(ref mut stream) = self.stream {
-                            stream.ctrl_send.send(StreamControllMsg::ConnectTo(self.addr.clone())).unwrap();
+                            stream
+                                .ctrl_send
+                                .send(StreamControllMsg::ConnectTo(self.addr.clone()))
+                                .unwrap();
                         }
                     }
                     Interaction::Disconnect => {
                         if let Some(ref mut stream) = self.stream {
                             stream.msg_send.send(Message::DashboardDisconnect).unwrap();
                             stream.ctrl_send.send(StreamControllMsg::Flush).unwrap();
-                            stream.ctrl_send.send(StreamControllMsg::Disconnect).unwrap();
+                            stream
+                                .ctrl_send
+                                .send(StreamControllMsg::Disconnect)
+                                .unwrap();
                         }
                     }
                 }
                 dbg!(interaction_event);
             }
-            GUIMsg::Keyboard(_keyboard_event) => {
-
-            }
+            GUIMsg::Keyboard(_keyboard_event) => {}
         }
         Command::none()
     }
@@ -150,11 +151,11 @@ where
             )
             .push(
                 Button::new(&mut self.gui.connect, Text::new("connect"))
-                .on_press(Interaction::Connect),
+                    .on_press(Interaction::Connect),
             )
             .push(
                 Button::new(&mut self.gui.disconnect, Text::new("disconnect"))
-                .on_press(Interaction::Disconnect),
+                    .on_press(Interaction::Disconnect),
             )
             .into();
         root.map(Self::Message::Interaction)
