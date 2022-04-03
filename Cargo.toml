@@ -6,6 +6,7 @@ members = [
     "code/dash", #   aareocams-dash
     "code/bot", #    aareocams-bot
 ]
+# because cargo workspace be dumb sometimes
 resolver = "2"
 
 [profile.speed]
