@@ -6,7 +6,6 @@ extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
 extern crate adafruit_motorkit;
-extern crate iced_video_player;
 #[macro_use]
 extern crate log;
 

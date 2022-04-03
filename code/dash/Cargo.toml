@@ -13,6 +13,8 @@ thiserror = "1.0"
 derivative = "2.2.0"
 log4rs = "1.0.0"
 log = "0.4.16"
+# for use with iced_video_player
+url = "2.2.2"
 
 [dependencies.aareocams-core]
 path = "../core"
@@ -37,3 +39,6 @@ features = ["tokio"]
 
 [dependencies.iced_native]
 git = "https://github.com/iced-rs/iced.git"
+
+[dependencies.iced_video_player]
+path = "../../iced_video_player"

@@ -9,6 +9,7 @@ extern crate serde;
 extern crate sn30pro;
 extern crate thiserror;
 extern crate tokio;
+extern crate iced_video_player;
 #[macro_use]
 extern crate derivative;
 #[macro_use]

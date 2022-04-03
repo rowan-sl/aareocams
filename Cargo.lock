@@ -11,7 +11,6 @@ dependencies = [
  "adafruit_motorkit",
  "anyhow",
  "bincode",
- "iced_video_player",
  "log",
  "pretty_env_logger",
  "serde",
@@ -34,12 +33,14 @@ dependencies = [
  "derivative",
  "iced",
  "iced_native",
+ "iced_video_player",
  "log",
  "log4rs",
  "serde",
  "sn30pro",
  "thiserror",
  "tokio",
+ "url",
 ]
 
 [[package]]
