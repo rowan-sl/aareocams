@@ -25,8 +25,8 @@ This is set up as a cargo workspace, with different sub-programs and libraries a
 
 currently there is realy no point, as you need the robot to use it ¯\\\_(ツ)_/¯ but in order to build the code you need a few things
 
-- cargo, with the armv7-unknown-linux-gnueabihf toolchain installed
-- gcc-arm-linux-gnueabihf (for linking)
+- cargo, with the `armv7-unknown-linux-gnueabihf` toolchain installed
+- `gcc-arm-linux-gnueabihf` (for linking)
 - probably something else that is missing (make a issue on github if there is)
 
 to build, use `make all` to build all targets, or one of the many available commands listed here:
@@ -34,5 +34,19 @@ to build, use `make all` to build all targets, or one of the many available comm
 - `make debug` build the debug target
 - `make release` build the release target
 - `make clean` clean up all build artifacts
+- `make deploy_r` or `make deploy_d`: see the [deploying](##Deploying) section
 
 the produced executables will be moved to subdirectories in the `build/` based on what target they were built for.
+
+please note that the `aareocams-bot` executables will have been built for the raspberry pi (`armv7-unknown-linux-gnueabihf`) target.
+
+## Deploying
+
+Deployment requires a few extra steps
+
+- make shure you have rsync installed, for transfering the files
+- a raspberry pi (tested on the raspberry pi 3 B+) to deploy to
+- copy `config/deploy-config.sh.template` to `config/deploy-config.sh` and fill in the appropriate fields.
+- configure ssh so you can connect to the pi you are deploying to
+
+To deploy, make shure the pi is running and run `make deploy_r` or `make deploy_d` based on if you want to deploy release or debug code
