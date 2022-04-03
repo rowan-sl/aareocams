@@ -32,6 +32,7 @@ currently there is realy no point, as you need the robot to use it ¯\\\_(ツ)_/
 
 - cargo, with the `armv7-unknown-linux-gnueabihf` toolchain installed
 - `gcc-arm-linux-gnueabihf` (for linking)
+- gstreamer (for installation instructions, see the [gstreamer-rs build instructions](https://github.com/sdroege/gstreamer-rs#installation))
 - probably something else that is missing (make a issue on github if there is)
 
 to build, use `make all` to build all targets, or one of the many available commands listed here:

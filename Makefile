@@ -17,14 +17,14 @@ clean_out_dir_rel:
 	rm -f $(OUTDIR)/release/aareocams-bot
 
 debug: out_dir clean_out_dir_dbg
-	$(CARGO_CMD) build
-	$(CARGO_CMD) build --target armv7-unknown-linux-gnueabihf
+	$(CARGO_CMD) build --bin aareocams-dash
+	$(CARGO_CMD) build --target armv7-unknown-linux-gnueabihf --bin aareocams-bot
 	mv target/debug/aareocams-dash $(OUTDIR)/debug
 	mv target/armv7-unknown-linux-gnueabihf/debug/aareocams-bot $(OUTDIR)/debug
 
 release: out_dir clean_out_dir_rel
-	$(CARGO_CMD) build --profile $(OPT_PROFILE)
-	$(CARGO_CMD) build --profile $(OPT_PROFILE) --target armv7-unknown-linux-gnueabihf
+	$(CARGO_CMD) build --profile $(OPT_PROFILE) --bin aareocams-dash
+	$(CARGO_CMD) build --profile $(OPT_PROFILE) --target armv7-unknown-linux-gnueabihf --bin aareocams-bot
 	mv target/$(OPT_PROFILE)/aareocams-dash $(OUTDIR)/release
 	mv target/armv7-unknown-linux-gnueabihf/$(OPT_PROFILE)/aareocams-bot $(OUTDIR)/release
 
