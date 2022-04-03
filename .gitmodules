@@ -1,0 +1,3 @@
+[submodule "iced_video_player"]
+	path = iced_video_player
+	url = https://github.com/rowan-sl/iced_video_player.git
