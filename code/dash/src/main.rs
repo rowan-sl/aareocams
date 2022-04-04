@@ -5,12 +5,11 @@ extern crate anyhow;
 extern crate bincode;
 extern crate iced;
 extern crate iced_native;
-extern crate iced_video_player;
 extern crate serde;
 extern crate sn30pro;
 extern crate thiserror;
 extern crate tokio;
-extern crate url;
+extern crate image;
 #[macro_use]
 extern crate derivative;
 #[macro_use]

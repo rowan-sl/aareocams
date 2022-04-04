@@ -7,5 +7,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum Message {
     DashboardDisconnect,
-    Click,
+    VideoStream {
+        stream_id: usize,
+        dimensions: (u32, u32),
+        data: Vec<u8>,
+    }
 }

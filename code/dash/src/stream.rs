@@ -38,7 +38,6 @@ pub enum Event<A: ToSocketAddrs + Debug, M: Serialize + DeserializeOwned + Debug
         ctrl_send: mpsc::UnboundedSender<StreamControllMsg<A>>,
     },
     ConnectedTo(A),
-    /// response to [`StreamControllMsg::Disconnect`]
     Received(M),
 }
 

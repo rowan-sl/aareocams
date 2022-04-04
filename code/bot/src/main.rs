@@ -5,7 +5,6 @@ extern crate adafruit_motorkit;
 extern crate anyhow;
 extern crate bincode;
 extern crate image;
-// extern crate opencv;
 extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
@@ -13,20 +12,19 @@ extern crate nokhwa;
 #[macro_use]
 extern crate log;
 
-use std::time::Instant;
+use std::thread;
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use nokhwa::{Camera, CameraInfo};
-use aareocams_core::{H264Decoder, H264Encoder};
+use aareocams_core::H264Encoder;
 
-// use aareocams_net::Message;
-// use aareocams_scomm::Stream;
-// use tokio::net::TcpListener;
+use aareocams_net::Message;
+use aareocams_scomm::Stream;
+use tokio::{net::TcpListener, sync::mpsc, select};
 
-// mod config {
-//     pub const ADDR: &str = "127.0.0.1:6440";
-// }
-
+mod config {
+    pub const ADDR: &str = "127.0.0.1:6440";
+}
 
 fn get_camera_cfgs() -> Result<Vec<CameraInfo>> {
     info!("Searching for cameras");
@@ -49,65 +47,80 @@ async fn main() -> Result<()> {
 
     info!("Initialized logging");
 
-    let cam_cfgs = get_camera_cfgs()?;
+    let (video_stream_send, mut video_stream_recv): (mpsc::Sender<(usize, (u32, u32), Vec<u8>)>, _) = mpsc::channel(60 * 2);
 
-    info!("Opening camera");
-    let mut cam = Camera::new(
-        cam_cfgs[0].index(),
-        None,
-    )?;
-    info!("Starting camera stream");
-    cam.open_stream()?;
+    thread::spawn(move || { let res: Result<()> = (move || {
+        let cam_cfgs = get_camera_cfgs()?;
 
-    debug!("Initializing encoder and decoder");
-    let mut encoder = H264Encoder::new(cam.resolution().width(), cam.resolution().height())?;
-    // let mut decoder = H264Decoder::new()?;
+        info!("Opening camera");
+        let mut cam = Camera::new(
+            cam_cfgs[0].index(),
+            None,
+        )?;
+        info!("Starting camera stream");
+        cam.open_stream()?;
 
-    debug!("Reading frames");
-    for i in 0..60 {
-        debug!("reading image #{}", i);
-        let img = cam.frame()?;
-        // img.save(format!("out_{}a.png", i))?;
-        let before = Instant::now();
-        let bytes = encoder.encode(&img)?;
-        let after = Instant::now();
-        debug!("encoding took {:?}, produced {} bytes", after - before, bytes.len());
-        // let decoded = decoder.decode(&bytes)?;
-        // for dec_img in decoded {
-        //     debug!("decoded out_{}", i);
-        //     // dec_img.save(format!("out_{}b.png", i))?;
-        // }
+        debug!("Initializing encoder and decoder");
+        let mut encoder = H264Encoder::new(cam.resolution().width(), cam.resolution().height())?;
+
+        info!("Camera thread: entering main loop");
+
+        loop {
+            let frame = cam.frame()?;
+            let encoded = encoder.encode(&frame)?;
+            match video_stream_send.try_send((0, (frame.width(), frame.height()), encoded)) {
+                Err(mpsc::error::TrySendError::Full(_)) => {}
+                other => other?
+            }
+        }
+
+        // TODO implement exiting
+        // info!("Done, closing stream");
+        // cam.stop_stream()?;
+
+        // Ok(())
+    })();
+    if let Err(e) = res {
+        error!("Camera thread errored:\n{:#?}", e);
+    }
+    });
+
+    let listener = TcpListener::bind(config::ADDR).await?;
+        info!("Listening for a new connection");
+        let (raw_conn, _port) = listener.accept().await?;
+        let mut conn = Stream::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());
+
+    loop {
+        select! {
+            update_res = conn.update_loop() => {
+                if let Err(e) = update_res {
+                    error!("{:?}", e);
+                    break;
+                }
+                info!(
+                    "received: {:?}",
+                    match conn.get() {
+                        Some(Message::DashboardDisconnect) => {
+                            info!("Dashboard disconnected");
+                            break;
+                        }
+                        Some(m) => m,
+                        None => continue,
+                    }
+                );
+            }
+            video_message = video_stream_recv.recv() => {
+                if let Some(msg) = video_message {
+                    conn.queue(&Message::VideoStream { stream_id: msg.0, dimensions: msg.1, data: msg.2 })?;
+                } else {
+                    error!("Video thread closed, exiting");
+                    bail!("Video stream closed");
+                }
+            }
+        };
     }
 
-    info!("Done, closing stream");
-    cam.stop_stream()?;
-
     Ok(())
-
-    // let listener = TcpListener::bind(config::ADDR).await?;
-    // loop {
-    //     info!("Listening for a new connection");
-    //     let (raw_conn, _port) = listener.accept().await?;
-    //     let mut conn = Stream::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());
-
-    //     loop {
-    //         if let Err(e) = conn.update_loop().await {
-    //             error!("{:?}", e);
-    //             break;
-    //         }
-    //         info!(
-    //             "received: {:?}",
-    //             match conn.get() {
-    //                 Some(Message::DashboardDisconnect) => {
-    //                     info!("Dashboard disconnected");
-    //                     break;
-    //                 }
-    //                 Some(m) => m,
-    //                 None => continue,
-    //             }
-    //         );
-    //     }
-    // }
 }
 
 /// interface to the hardware of a quadrature encoder (with index)

@@ -1,11 +1,13 @@
 mod keyboard;
 
 use crate::stream::{self, StreamControllMsg};
+use aareocams_core::H264Decoder;
 use aareocams_net::Message;
 use iced::{
     button::{self, Button},
     Application, Command, Subscription, Text,
 };
+use image::DynamicImage;
 use std::fmt::Debug;
 use tokio::{net::ToSocketAddrs, sync::mpsc};
 
@@ -18,13 +20,11 @@ pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
 
 #[derive(Debug, Clone)]
 pub enum Interaction {
-    Click,
     Connect,
     Disconnect,
 }
 
 pub struct GUIState {
-    clicky: button::State,
     connect: button::State,
     disconnect: button::State,
 }
@@ -42,6 +42,9 @@ where
     addr: A,
     /// holds all communication elements with the stream subscription
     stream: Option<StreamInterface<A>>,
+    /// test feild, remove this for a proper interface later
+    video_0_handle: iced::image::Handle,
+    video_0_decoder: H264Decoder,
     /// the state for all GUI elements
     gui: GUIState,
     exit: bool,
@@ -62,10 +65,11 @@ where
                 addr: flags.0,
                 stream: None,
                 gui: GUIState {
-                    clicky: button::State::new(),
                     connect: button::State::new(),
                     disconnect: button::State::new(),
                 },
+                video_0_handle: iced::image::Handle::from_pixels(0, 0, vec![]),
+                video_0_decoder: H264Decoder::new().unwrap(),
                 exit: false,
             },
             Command::none(),
@@ -87,7 +91,7 @@ where
         match msg {
             GUIMsg::Socket(socket_event) => {
                 use stream::Event;
-                dbg!(&socket_event);
+                // dbg!(&socket_event);
 
                 match socket_event {
                     Event::Init {
@@ -103,16 +107,29 @@ where
                         eprintln!("Error sending message\n{:#?}", e);
                         self.exit = true;
                     }
-                    _ => {}
+                    Event::Received(message) => {
+                        match message {
+                            Message::DashboardDisconnect => unreachable!(),
+                            Message::VideoStream { stream_id: _, dimensions, data } => {
+                                match self.video_0_decoder.decode(&data) {
+                                    Ok(mut decoded) => {
+                                        if let Some(img) = decoded.pop() {
+                                            let bgra_img = DynamicImage::ImageRgb8(img).to_bgra8();
+                                            self.video_0_handle = iced::image::Handle::from_pixels(dimensions.0, dimensions.1, bgra_img.into_vec());
+                                        }
+                                    }
+                                    Err(e) => {
+                                        error!("Decoding error: {:?}", e);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Event::ConnectedTo(_addr) => {}
                 }
             }
             GUIMsg::Interaction(interaction_event) => {
                 match interaction_event {
-                    Interaction::Click => {
-                        if let Some(ref mut stream) = self.stream {
-                            stream.msg_send.send(Message::Click).unwrap();
-                        }
-                    }
                     Interaction::Connect => {
                         if let Some(ref mut stream) = self.stream {
                             stream
@@ -146,16 +163,15 @@ where
     fn view(&mut self) -> iced::Element<Self::Message> {
         let root: iced::Element<Interaction> = iced::Column::new()
             .push(
-                Button::new(&mut self.gui.clicky, Text::new("Click me!"))
-                    .on_press(Interaction::Click),
-            )
-            .push(
                 Button::new(&mut self.gui.connect, Text::new("connect"))
                     .on_press(Interaction::Connect),
             )
             .push(
                 Button::new(&mut self.gui.disconnect, Text::new("disconnect"))
                     .on_press(Interaction::Disconnect),
+            )
+            .push(
+                iced::image::Image::new(self.video_0_handle.clone())
             )
             .into();
         root.map(Self::Message::Interaction)
