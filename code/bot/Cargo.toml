@@ -13,6 +13,14 @@ bincode = "1.3.3"
 pretty_env_logger = "0.4.0"
 log = "0.4.16"
 adafruit_motorkit = "0.1.0"
+image = "0.23"
+
+[dependencies.nokhwa]
+version = "0.9"
+features = ["input-v4l"]
+
+[dependencies.aareocams-core]
+path = "../core"
 
 [dependencies.aareocams-scomm]
 path = "../scomm"

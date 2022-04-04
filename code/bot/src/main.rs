@@ -1,21 +1,44 @@
+extern crate aareocams_core;
 extern crate aareocams_net;
 extern crate aareocams_scomm;
 extern crate adafruit_motorkit;
 extern crate anyhow;
 extern crate bincode;
+extern crate image;
+// extern crate opencv;
 extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
+extern crate nokhwa;
 #[macro_use]
 extern crate log;
 
-use aareocams_net::Message;
-use aareocams_scomm::Stream;
-use anyhow::Result;
-use tokio::net::TcpListener;
+use std::time::Instant;
 
-mod config {
-    pub const ADDR: &str = "127.0.0.1:6440";
+use anyhow::Result;
+use nokhwa::{Camera, CameraInfo};
+use aareocams_core::{H264Decoder, H264Encoder};
+
+// use aareocams_net::Message;
+// use aareocams_scomm::Stream;
+// use tokio::net::TcpListener;
+
+// mod config {
+//     pub const ADDR: &str = "127.0.0.1:6440";
+// }
+
+
+fn get_camera_cfgs() -> Result<Vec<CameraInfo>> {
+    info!("Searching for cameras");
+    let mut cam_cfgs = nokhwa::query()?;
+    cam_cfgs.sort_by(|a, b| {
+        a.index().cmp(&b.index())
+    });
+    debug!("Found cameras:");
+    for cfg in &cam_cfgs {
+        debug!("{}: {} -- {}", cfg.index(), cfg.human_name(), cfg.description());
+    }
+    Ok(cam_cfgs)
 }
 
 #[tokio::main]
@@ -26,30 +49,65 @@ async fn main() -> Result<()> {
 
     info!("Initialized logging");
 
-    let listener = TcpListener::bind(config::ADDR).await?;
-    loop {
-        info!("Listening for a new connection");
-        let (raw_conn, _port) = listener.accept().await?;
-        let mut conn = Stream::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());
+    let cam_cfgs = get_camera_cfgs()?;
 
-        loop {
-            if let Err(e) = conn.update_loop().await {
-                error!("{:?}", e);
-                break;
-            }
-            info!(
-                "received: {:?}",
-                match conn.get() {
-                    Some(Message::DashboardDisconnect) => {
-                        info!("Dashboard disconnected");
-                        break;
-                    }
-                    Some(m) => m,
-                    None => continue,
-                }
-            );
-        }
+    info!("Opening camera");
+    let mut cam = Camera::new(
+        cam_cfgs[0].index(),
+        None,
+    )?;
+    info!("Starting camera stream");
+    cam.open_stream()?;
+
+    debug!("Initializing encoder and decoder");
+    let mut encoder = H264Encoder::new(cam.resolution().width(), cam.resolution().height())?;
+    // let mut decoder = H264Decoder::new()?;
+
+    debug!("Reading frames");
+    for i in 0..60 {
+        debug!("reading image #{}", i);
+        let img = cam.frame()?;
+        // img.save(format!("out_{}a.png", i))?;
+        let before = Instant::now();
+        let bytes = encoder.encode(&img)?;
+        let after = Instant::now();
+        debug!("encoding took {:?}, produced {} bytes", after - before, bytes.len());
+        // let decoded = decoder.decode(&bytes)?;
+        // for dec_img in decoded {
+        //     debug!("decoded out_{}", i);
+        //     // dec_img.save(format!("out_{}b.png", i))?;
+        // }
     }
+
+    info!("Done, closing stream");
+    cam.stop_stream()?;
+
+    Ok(())
+
+    // let listener = TcpListener::bind(config::ADDR).await?;
+    // loop {
+    //     info!("Listening for a new connection");
+    //     let (raw_conn, _port) = listener.accept().await?;
+    //     let mut conn = Stream::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());
+
+    //     loop {
+    //         if let Err(e) = conn.update_loop().await {
+    //             error!("{:?}", e);
+    //             break;
+    //         }
+    //         info!(
+    //             "received: {:?}",
+    //             match conn.get() {
+    //                 Some(Message::DashboardDisconnect) => {
+    //                     info!("Dashboard disconnected");
+    //                     break;
+    //                 }
+    //                 Some(m) => m,
+    //                 None => continue,
+    //             }
+    //         );
+    //     }
+    // }
 }
 
 /// interface to the hardware of a quadrature encoder (with index)
