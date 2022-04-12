@@ -8,6 +8,7 @@ extern crate image;
 extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
+extern crate lvenc;
 extern crate nokhwa;
 #[macro_use]
 extern crate log;
@@ -16,8 +17,6 @@ use std::thread;
 
 use anyhow::{Result, bail};
 use nokhwa::{Camera, CameraInfo};
-use aareocams_core::H264Encoder;
-
 use aareocams_net::Message;
 use aareocams_scomm::Stream;
 use tokio::{net::TcpListener, sync::mpsc, select};
@@ -47,7 +46,7 @@ async fn main() -> Result<()> {
 
     info!("Initialized logging");
 
-    let (video_stream_send, mut video_stream_recv): (mpsc::Sender<(usize, (u32, u32), Vec<u8>)>, _) = mpsc::channel(60 * 2);
+    let (video_stream_send, mut video_stream_recv): (mpsc::Sender<(usize, lvenc::Packet)>, _) = mpsc::channel(60 * 2);
 
     thread::spawn(move || { let res: Result<()> = (move || {
         let cam_cfgs = get_camera_cfgs()?;
@@ -61,17 +60,19 @@ async fn main() -> Result<()> {
         cam.open_stream()?;
 
         debug!("Initializing encoder and decoder");
-        let mut encoder = H264Encoder::new(cam.resolution().width(), cam.resolution().height())?;
+        // let mut encoder = H264Encoder::new(cam.resolution().width(), cam.resolution().height())?;
+        let mut encoder = lvenc::Encoder::new(cam.resolution().width(), cam.resolution().height());
 
         info!("Camera thread: entering main loop");
 
         loop {
             let frame = cam.frame()?;
-            let encoded = encoder.encode(&frame)?;
-            match video_stream_send.try_send((0, (frame.width(), frame.height()), encoded)) {
-                Err(mpsc::error::TrySendError::Full(_)) => {}
-                other => other?
+            encoder.encode_frame(frame);
+            for p in encoder.packets() {
+                video_stream_send.blocking_send((0, p))?;
             }
+            // let encoded = encoder.encode(&frame)?;
+            // video_stream_send.blocking_send((0, (frame.width(), frame.height()), encoded))?;
         }
 
         // TODO implement exiting
@@ -111,7 +112,7 @@ async fn main() -> Result<()> {
             }
             video_message = video_stream_recv.recv() => {
                 if let Some(msg) = video_message {
-                    conn.queue(&Message::VideoStream { stream_id: msg.0, dimensions: msg.1, data: msg.2 })?;
+                    conn.queue(&Message::VideoStream { stream_id: msg.0, packet: msg.1 })?;
                 } else {
                     error!("Video thread closed, exiting");
                     bail!("Video stream closed");

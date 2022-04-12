@@ -1,7 +1,6 @@
 mod keyboard;
 
 use crate::stream::{self, StreamControllMsg};
-use aareocams_core::H264Decoder;
 use aareocams_net::Message;
 use iced::{
     button::{self, Button},
@@ -44,7 +43,7 @@ where
     stream: Option<StreamInterface<A>>,
     /// test feild, remove this for a proper interface later
     video_0_handle: iced::image::Handle,
-    video_0_decoder: H264Decoder,
+    video_0_decoder: lvenc::Decoder,
     /// the state for all GUI elements
     gui: GUIState,
     exit: bool,
@@ -55,7 +54,7 @@ where
     A: ToSocketAddrs + Clone + Sync + Debug + Send + 'static,
 {
     type Message = GUIMsg<A>;
-    // type Flags = (Controller, Connection<Message, bincode::DefaultOptions>);
+    /// (ip addr of bot, controller ID)
     type Flags = (A, usize);
     type Executor = iced::executor::Default;
 
@@ -69,7 +68,8 @@ where
                     disconnect: button::State::new(),
                 },
                 video_0_handle: iced::image::Handle::from_pixels(0, 0, vec![]),
-                video_0_decoder: H264Decoder::new().unwrap(),
+                // video_0_decoder: H264Decoder::new().unwrap(),
+                video_0_decoder: lvenc::Decoder::new(),
                 exit: false,
             },
             Command::none(),
@@ -110,19 +110,31 @@ where
                     Event::Received(message) => {
                         match message {
                             Message::DashboardDisconnect => unreachable!(),
-                            Message::VideoStream { stream_id: _, dimensions, data } => {
-                                match self.video_0_decoder.decode(&data) {
-                                    Ok(mut decoded) => {
-                                        if let Some(img) = decoded.pop() {
-                                            let bgra_img = DynamicImage::ImageRgb8(img).to_bgra8();
-                                            self.video_0_handle = iced::image::Handle::from_pixels(dimensions.0, dimensions.1, bgra_img.into_vec());
+                            Message::VideoStream { stream_id, packet } => {
+                                match stream_id {
+                                    0 => {
+                                        self.video_0_decoder.feed_packet(packet);
+                                        if let Some(frame) = self.video_0_decoder.frames().last() {
+                                            let bgra_img = DynamicImage::ImageRgb8(frame).to_bgra8();
+                                            self.video_0_handle = iced::image::Handle::from_pixels(bgra_img.width(), bgra_img.height(), bgra_img.into_vec());
                                         }
                                     }
-                                    Err(e) => {
-                                        error!("Decoding error: {:?}", e);
-                                    }
+                                    _ => {panic!("Invalid stream id {}", stream_id)}
                                 }
                             }
+                            // Message::VideoStream { stream_id: _, dimensions, data } => {
+                            //     match self.video_0_decoder.decode(&data) {
+                            //         Ok(mut decoded) => {
+                            //             if let Some(img) = decoded.pop() {
+                            //                 let bgra_img = DynamicImage::ImageRgb8(img).to_bgra8();
+                            //                 self.video_0_handle = iced::image::Handle::from_pixels(dimensions.0, dimensions.1, bgra_img.into_vec());
+                            //             }
+                            //         }
+                            //         Err(e) => {
+                            //             error!("Decoding error: {:?}", e);
+                            //         }
+                            //     }
+                            // }
                         }
                     }
                     Event::ConnectedTo(_addr) => {}

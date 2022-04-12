@@ -34,7 +34,7 @@ pub struct H264Decoder {
 impl H264Decoder {
     pub fn new() -> Result<Self, openh264::Error> {
         Ok(Self {
-            decoder: Decoder::new()?,
+            decoder: Decoder::with_config(openh264::decoder::DecoderConfig::new().debug(true))?,
             buffer: vec![],
         })
     }
@@ -44,10 +44,18 @@ impl H264Decoder {
 
         self.buffer.extend_from_slice(data);
 
+        let mut error = None;
+
         let mut removed_data = 0usize;
         for packet in nal_units(&self.buffer) {
             removed_data += packet.len();
-            let decoded = self.decoder.decode(packet)?;
+            let decoded = match self.decoder.decode(packet) {
+                Ok(dec) => dec,
+                Err(e) => {
+                    error = Some(e);
+                    break;
+                }
+            };
             let dim = decoded.dimension_rgb();
             if dim != (0, 0) {
                 let rgb_len = dim.0 * dim.1 * 3;
@@ -59,7 +67,11 @@ impl H264Decoder {
 
         self.buffer.drain(0..removed_data);
 
-        Ok(decoded_images)
+        if let Some(err) = error {
+            Err(err)
+        } else {
+            Ok(decoded_images)
+        }
     }
 }
 

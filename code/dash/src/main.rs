@@ -10,6 +10,7 @@ extern crate sn30pro;
 extern crate thiserror;
 extern crate tokio;
 extern crate image;
+extern crate lvenc;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
