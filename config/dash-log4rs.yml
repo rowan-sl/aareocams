@@ -34,12 +34,24 @@ loggers:
       - backend
     additive: false
 
+  wgpu_core::device:
+    level: warn
+    appenders:
+      - backend
+    additive: false
+
   iced_wgpu:
     level: info
     appenders:
       - backend
     additive: false
   
+  iced_wgpu::image::atlas:
+    level: warn
+    appenders:
+      - backend
+    additive: false
+
   wgpu_hal:
     level: info
     appenders:
