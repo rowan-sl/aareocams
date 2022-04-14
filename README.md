@@ -21,11 +21,6 @@ This is set up as a cargo workspace, with different sub-programs and libraries a
 - `scomm`: more general networking code, you can use this in your own project if you want
 - `core`: logic and code used by **all** crates in this project, depends on no other crate in this project
 
-Q: why is `iced_video_player` here?
-
-A: it is a modified version of [iced_video_player](https://github.com/jazzfool/iced_video_player) that uses the git version of iced,
-as that is what this project uses and cargo gets mad if it is not set up like this.
-
 ## Configuration
 
 see [config](config/README.md)
