@@ -99,7 +99,6 @@ impl CameraViewer {
         root_children.push(controlls.into());
 
         for cam in &mut self.streams {
-            info!("rendering stream {}", cam.stream_id);
             root_children.push(
                 Column::new()
                     .height(Length::Shrink)
@@ -192,12 +191,9 @@ impl CameraViewer {
     }
 
     pub fn feed_message(&mut self, id: Uuid, packet: Packet) {
-        info!("recv packet for {}", id);
         if let Some(stream) = self.stream_by_id(id) {
-            info!("processing packet");
             stream.decoder.feed_packet(packet);
             if let Some(next_frame) = stream.decoder.frames().last() {
-                info!("new frame {}x{}", next_frame.width(), next_frame.height());
                 let bgr = DynamicImage::ImageRgb8(next_frame).into_bgra8();
                 stream.image_handle =
                     IcedImageHandle::from_pixels(bgr.width(), bgr.height(), bgr.to_vec());
