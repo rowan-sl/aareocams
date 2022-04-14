@@ -61,5 +61,6 @@ To deploy, make shure the pi is running and run `make deploy_r` or `make deploy_
 ## TODO's
 
 - [ ] allow querying and configuration of camera formats from the dashboard, including resolution and FPS (and combinations of bolth)
+- [ ] allow querying which cameras are available from the dashboard
 - [ ] fix dashboard so that it uses the new `Uuid` stream identification system
 - [ ] add configurable options for bits per packet when initializing a camera stream (lvenc encoder option)
