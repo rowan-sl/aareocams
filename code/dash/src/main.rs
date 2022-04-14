@@ -14,31 +14,37 @@ extern crate sn30pro;
 extern crate thiserror;
 extern crate tokio;
 extern crate uuid;
+extern crate yaml_rust;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
 
+mod config;
 mod dash;
 mod stream;
+
+use std::net::SocketAddrV4;
 
 use anyhow::Result;
 use dash::Dashboard;
 use iced::{Application, Settings};
 
-mod config {
-    pub const ADDR: &str = "127.0.0.1:6440";
-    pub const JOYSTICK_ID: usize = 0;
-}
+// mod config {
+//     pub const ADDR: &str = "127.0.0.1:6440";
+//     pub const JOYSTICK_ID: usize = 0;
+// }
 
 fn main() -> Result<()> {
     log4rs::init_file("config/dash-log4rs.yml", Default::default())?;
 
     info!("Initialized logging");
 
-    // ah yes `::<_>::`
-    Dashboard::<&str>::run(Settings::with_flags((config::ADDR, config::JOYSTICK_ID)))?;
+    let cfg = config::load_config("config/dash.yml")?;
+    info!("Read configuration {:#?}", cfg);
+
+    Dashboard::<SocketAddrV4>::run(Settings::with_flags((cfg.bot_addr, cfg.controller_port)))?;
 
     Ok(())
 }

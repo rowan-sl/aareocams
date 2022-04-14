@@ -2,3 +2,6 @@
 /build
 /logs
 config/deploy-config.sh
+config/bot.yml
+config/dash.yml
+config/dash-log4rs.yml

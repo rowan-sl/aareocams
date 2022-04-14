@@ -26,6 +26,10 @@ Q: why is `iced_video_player` here?
 A: it is a modified version of [iced_video_player](https://github.com/jazzfool/iced_video_player) that uses the git version of iced,
 as that is what this project uses and cargo gets mad if it is not set up like this.
 
+## Configuration
+
+see [config](config/README.md)
+
 ## Compiling
 
 currently there is realy no point, as you need the robot to use it ¯\\\_(ツ)_/¯ but in order to build the code you need a few things
@@ -53,7 +57,6 @@ Deployment requires a few extra steps
 
 - make shure you have rsync installed, for transfering the files
 - a raspberry pi (tested on the raspberry pi 3 B+) to deploy to
-- copy `config/deploy-config.sh.template` to `config/deploy-config.sh` and fill in the appropriate fields.
 - configure ssh so you can connect to the pi you are deploying to
 
 To deploy, make shure the pi is running and run `make deploy_r` or `make deploy_d` based on if you want to deploy release or debug code
@@ -64,3 +67,5 @@ To deploy, make shure the pi is running and run `make deploy_r` or `make deploy_
 - [ ] allow querying which cameras are available from the dashboard
 - [ ] fix dashboard so that it uses the new `Uuid` stream identification system
 - [ ] add configurable options for bits per packet when initializing a camera stream (lvenc encoder option)
+- [ ] **IMPORTANT** make `deploy.sh` move the bot config files as well as the executable!
+- [ ] make a tool for setting up configuration

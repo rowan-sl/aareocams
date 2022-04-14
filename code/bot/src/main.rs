@@ -13,12 +13,14 @@ extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
 extern crate uuid;
+extern crate yaml_rust;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
 extern crate log;
 
 pub mod camera_server;
+mod config;
 
 use aareocams_net::Message;
 use aareocams_scomm::Stream;
@@ -27,9 +29,9 @@ use camera_server::CameraServer;
 use nokhwa::CameraInfo;
 use tokio::{net::TcpListener, select};
 
-mod config {
-    pub const ADDR: &str = "127.0.0.1:6440";
-}
+// mod config {
+//     pub const ADDR: &str = "127.0.0.1:6440";
+// }
 
 pub fn get_camera_cfgs() -> Result<Vec<CameraInfo>> {
     info!("Searching for cameras");
@@ -49,16 +51,21 @@ pub fn get_camera_cfgs() -> Result<Vec<CameraInfo>> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    println!("Reading configuration");
+    let cfg = config::load_config("config/bot.yml")?;
+
     pretty_env_logger::formatted_builder()
         .filter_level(log::LevelFilter::Debug)
         .init();
+
+    info!("Read configuration {:#?}", cfg);
 
     info!("Initialized logging");
     let _ = get_camera_cfgs()?;
     info!("Starting camera server");
     let mut camera_server = CameraServer::new();
     info!("Listening for a new connection");
-    let listener = TcpListener::bind(config::ADDR).await?;
+    let listener = TcpListener::bind(cfg.addr).await?;
     let (raw_conn, port) = listener.accept().await?;
     info!("Connected to {}", port);
     let mut conn = Stream::<Message, _>::new(raw_conn, bincode::DefaultOptions::new());

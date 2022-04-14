@@ -21,6 +21,7 @@ dependencies = [
  "serde",
  "tokio",
  "uuid",
+ "yaml-rust",
 ]
 
 [[package]]
@@ -52,6 +53,7 @@ dependencies = [
  "thiserror",
  "tokio",
  "uuid",
+ "yaml-rust",
 ]
 
 [[package]]

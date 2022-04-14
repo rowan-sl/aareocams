@@ -15,6 +15,7 @@ log = "0.4.16"
 adafruit_motorkit = "0.1.0"
 image = "0.23"
 derivative = "2.2.0"
+yaml-rust = "0.4"
 
 [dependencies.uuid]
 version = "0.8"

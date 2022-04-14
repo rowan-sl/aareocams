@@ -1,0 +1,4 @@
+# address to connect to the bot with as a full ipv4 address
+bot_addr: ""
+# controller id to use (/dev/js[])
+controller_port: 0
