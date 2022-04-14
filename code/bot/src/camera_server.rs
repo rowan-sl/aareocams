@@ -1,13 +1,13 @@
 use std::{
     sync::{atomic::AtomicBool, Arc},
-    thread::{self, JoinHandle}, time::Duration,
+    thread::{self, JoinHandle},
+    time::Duration,
 };
 
 use aareocams_net::{Message, VideoStreamAction, VideoStreamInfo};
 use nokhwa::Camera;
 use tokio::sync::{broadcast, mpsc};
 use uuid::Uuid;
-
 
 #[derive(Derivative)]
 #[derivative(Debug)]

@@ -20,16 +20,12 @@ extern crate log;
 
 pub mod camera_server;
 
-
 use aareocams_net::Message;
 use aareocams_scomm::Stream;
 use anyhow::Result;
-use nokhwa::CameraInfo;
-use tokio::{
-    net::TcpListener,
-    select,
-};
 use camera_server::CameraServer;
+use nokhwa::CameraInfo;
+use tokio::{net::TcpListener, select};
 
 mod config {
     pub const ADDR: &str = "127.0.0.1:6440";

@@ -22,18 +22,10 @@ pub enum VideoStreamAction {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum VideoStreamInfo {
     Initialized,
-    InitError {
-        message: String,
-    },
-    OpenCamError {
-        message: String,
-    },
-    ReadError {
-        message: String,
-    },
-    CloseError {
-        message: String,
-    },
+    InitError { message: String },
+    OpenCamError { message: String },
+    ReadError { message: String },
+    CloseError { message: String },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

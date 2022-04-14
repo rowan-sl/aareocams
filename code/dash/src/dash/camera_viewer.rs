@@ -82,12 +82,14 @@ impl CameraViewer {
             .height(Length::Shrink)
             .width(Length::Shrink)
             .spacing(2)
-            .push(TextInput::new(
-                &mut self.new_stream_input_state,
-                "id",
-                &self.new_stream_input_text,
-                |new| CameraViewerEvent::StreamIDInputChange(new),
-                ).width(Length::Units(100))
+            .push(
+                TextInput::new(
+                    &mut self.new_stream_input_state,
+                    "id",
+                    &self.new_stream_input_text,
+                    |new| CameraViewerEvent::StreamIDInputChange(new),
+                )
+                .width(Length::Units(100)),
             )
             .push(
                 Button::new(&mut self.new_stream_btn_state, Text::new("Connect stream"))
@@ -104,9 +106,10 @@ impl CameraViewer {
                     .height(Length::Shrink)
                     .width(Length::Shrink)
                     .spacing(5)
-                    .push(IcedImage::new(cam.image_handle.clone())
-                        .height(Length::Shrink)
-                        .content_fit(iced::ContentFit::Contain)
+                    .push(
+                        IcedImage::new(cam.image_handle.clone())
+                            .height(Length::Shrink)
+                            .content_fit(iced::ContentFit::Contain),
                     )
                     .push(
                         Row::new()
@@ -125,17 +128,19 @@ impl CameraViewer {
                                 Button::new(&mut cam.close_btn, Text::new("Close"))
                                     .on_press(CameraViewerEvent::Close(cam.stream_id)),
                             ),
-                    ).into()
+                    )
+                    .into(),
             );
         }
 
-        let root: iced::Element<CameraViewerEvent> = Row::<'_, CameraViewerEvent>::with_children(root_children)
-            .align_items(Alignment::Center)
-            .padding(5)
-            .spacing(2)
-            .height(Length::Shrink)
-            .width(Length::Shrink)
-            .into();
+        let root: iced::Element<CameraViewerEvent> =
+            Row::<'_, CameraViewerEvent>::with_children(root_children)
+                .align_items(Alignment::Center)
+                .padding(5)
+                .spacing(2)
+                .height(Length::Shrink)
+                .width(Length::Shrink)
+                .into();
 
         // root.explain([255.0, 0.0, 0.0])
         root
@@ -177,7 +182,10 @@ impl CameraViewer {
                     let uuid = Uuid::new_v4();
                     self.new_stream_input_text.clear();
                     self.register_stream(uuid);
-                    self.messages.push(Message::VideoStreamCtl { id: uuid, action: VideoStreamAction::Init { dev: id } });
+                    self.messages.push(Message::VideoStreamCtl {
+                        id: uuid,
+                        action: VideoStreamAction::Init { dev: id },
+                    });
                 }
             }
             CameraViewerEvent::StreamIDInputChange(new) => {
