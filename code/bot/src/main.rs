@@ -14,6 +14,7 @@ extern crate serde;
 extern crate tokio;
 extern crate uuid;
 extern crate yaml_rust;
+extern crate flume;
 #[macro_use]
 extern crate derivative;
 #[macro_use]

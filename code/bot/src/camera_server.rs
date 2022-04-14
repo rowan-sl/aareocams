@@ -6,8 +6,8 @@ use std::{
 
 use aareocams_net::{Message, VideoStreamAction, VideoStreamInfo};
 use nokhwa::Camera;
-use tokio::sync::{broadcast, mpsc};
 use uuid::Uuid;
+
 
 #[derive(Derivative)]
 #[derivative(Debug)]
@@ -22,23 +22,25 @@ pub struct CameraInterface {
 #[derive(Debug)]
 pub struct CameraServer {
     handles: Vec<JoinHandle<()>>,
-    messages_send: mpsc::UnboundedSender<Message>,
-    message_queue: mpsc::UnboundedReceiver<Message>,
+    messages_send: flume::Sender<Message>,
+    message_queue: flume::Receiver<Message>,
+    updates_receiver: flume::Receiver<(Uuid, VideoStreamAction)>,
     /// after sending any messages at all, one unpark all threads
-    updates_queue: broadcast::Sender<(Uuid, VideoStreamAction)>,
+    updates_queue: flume::Sender<(Uuid, VideoStreamAction)>,
     kill_signal: Arc<AtomicBool>,
 }
 
 impl CameraServer {
     pub fn new() -> Self {
         let handles = vec![];
-        let (messages_send, message_queue) = mpsc::unbounded_channel();
-        let (updates_queue, _) = broadcast::channel(50);
+        let (messages_send, message_queue) = flume::unbounded();
+        let (updates_queue, updates_receiver) = flume::unbounded();
 
         Self {
             handles,
             messages_send,
             message_queue,
+            updates_receiver,
             updates_queue,
             kill_signal: Arc::new(AtomicBool::new(false)),
         }
@@ -49,7 +51,7 @@ impl CameraServer {
             VideoStreamAction::Init { dev } => {
                 info!("Launching new camera worker {}, device no. {}", id, dev);
                 let message_queue = self.messages_send.clone();
-                let mut update_queue = self.updates_queue.subscribe();
+                let update_queue = self.updates_receiver.clone();
                 let kill_signal = self.kill_signal.clone();
 
                 const PARK_DURATION: Duration = Duration::new(5, 0);
@@ -114,7 +116,7 @@ impl CameraServer {
                                 }
                             }
                         }
-                        if kill_signal.load(std::sync::atomic::Ordering::SeqCst) {
+                        if kill_signal.load(std::sync::atomic::Ordering::Relaxed) {
                             // me using Iterator::<Item=WhoAsked>::find()
                             let _ = interface.cam.stop_stream();
                             break 'main;
@@ -140,17 +142,14 @@ impl CameraServer {
                             }
                             Err(recv_err) => {
                                 match recv_err {
-                                    broadcast::error::TryRecvError::Closed => panic!("update channel was closed before threads were shut down!"),
-                                    broadcast::error::TryRecvError::Empty => {
+                                    flume::TryRecvError::Disconnected => panic!("update channel was closed before threads were shut down!"),
+                                    flume::TryRecvError::Empty => {
                                         if interface.paused {
                                             // woken up if anything important happens
                                             // do not go to sleep at all if camera needs reading
                                             // park_timeout instead of just park because this code has trust issues
                                             std::thread::park_timeout(PARK_DURATION);
                                         }
-                                    }
-                                    broadcast::error::TryRecvError::Lagged(num_skipped) => {
-                                        error!("camera update channel size too small! skipped {} messages. increase the buffer size!", num_skipped);
                                     }
                                 }
                             }
@@ -170,7 +169,7 @@ impl CameraServer {
     }
 
     pub async fn collect_message(&mut self) -> Message {
-        self.message_queue.recv().await.unwrap()
+        self.message_queue.recv_async().await.unwrap()
     }
 
     pub fn clean(&mut self) {
@@ -191,7 +190,7 @@ impl CameraServer {
 impl Drop for CameraServer {
     fn drop(&mut self) {
         self.kill_signal
-            .store(true, std::sync::atomic::Ordering::SeqCst);
+            .store(true, std::sync::atomic::Ordering::Relaxed);
         for thread in self.handles.drain(..) {
             thread.thread().unpark();
             if let Err(thread_err) = thread.join() {
