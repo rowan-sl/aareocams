@@ -1,3 +1,5 @@
+#![feature(drain_filter)]
+
 extern crate aareocams_core;
 extern crate aareocams_net;
 extern crate aareocams_scomm;
@@ -5,12 +7,13 @@ extern crate anyhow;
 extern crate bincode;
 extern crate iced;
 extern crate iced_native;
+extern crate image;
+extern crate lvenc;
 extern crate serde;
 extern crate sn30pro;
 extern crate thiserror;
 extern crate tokio;
-extern crate image;
-extern crate lvenc;
+extern crate uuid;
 #[macro_use]
 extern crate derivative;
 #[macro_use]

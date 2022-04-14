@@ -1,12 +1,13 @@
+mod camera_viewer;
 mod keyboard;
 
 use crate::stream::{self, StreamControllMsg};
 use aareocams_net::Message;
+use camera_viewer::{CameraViewer, CameraViewerEvent};
 use iced::{
     button::{self, Button},
     Application, Command, Subscription, Text,
 };
-use image::DynamicImage;
 use std::fmt::Debug;
 use tokio::{net::ToSocketAddrs, sync::mpsc};
 
@@ -21,6 +22,7 @@ pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
 pub enum Interaction {
     Connect,
     Disconnect,
+    CameraStream(CameraViewerEvent),
 }
 
 pub struct GUIState {
@@ -41,9 +43,7 @@ where
     addr: A,
     /// holds all communication elements with the stream subscription
     stream: Option<StreamInterface<A>>,
-    /// test feild, remove this for a proper interface later
-    video_0_handle: iced::image::Handle,
-    video_0_decoder: lvenc::Decoder,
+    streams: CameraViewer,
     /// the state for all GUI elements
     gui: GUIState,
     exit: bool,
@@ -67,9 +67,7 @@ where
                     connect: button::State::new(),
                     disconnect: button::State::new(),
                 },
-                video_0_handle: iced::image::Handle::from_pixels(0, 0, vec![]),
-                // video_0_decoder: H264Decoder::new().unwrap(),
-                video_0_decoder: lvenc::Decoder::new(),
+                streams: CameraViewer::new(),
                 exit: false,
             },
             Command::none(),
@@ -107,62 +105,51 @@ where
                         eprintln!("Error sending message\n{:#?}", e);
                         self.exit = true;
                     }
-                    Event::Received(message) => {
-                        match message {
-                            Message::DashboardDisconnect => unreachable!(),
-                            Message::VideoStream { stream_id, packet } => {
-                                match stream_id {
-                                    0 => {
-                                        self.video_0_decoder.feed_packet(packet);
-                                        if let Some(frame) = self.video_0_decoder.frames().last() {
-                                            let bgra_img = DynamicImage::ImageRgb8(frame).to_bgra8();
-                                            self.video_0_handle = iced::image::Handle::from_pixels(bgra_img.width(), bgra_img.height(), bgra_img.into_vec());
-                                        }
-                                    }
-                                    _ => {panic!("Invalid stream id {}", stream_id)}
-                                }
-                            }
-                            // Message::VideoStream { stream_id: _, dimensions, data } => {
-                            //     match self.video_0_decoder.decode(&data) {
-                            //         Ok(mut decoded) => {
-                            //             if let Some(img) = decoded.pop() {
-                            //                 let bgra_img = DynamicImage::ImageRgb8(img).to_bgra8();
-                            //                 self.video_0_handle = iced::image::Handle::from_pixels(dimensions.0, dimensions.1, bgra_img.into_vec());
-                            //             }
-                            //         }
-                            //         Err(e) => {
-                            //             error!("Decoding error: {:?}", e);
-                            //         }
-                            //     }
-                            // }
+                    Event::Received(message) => match message {
+                        Message::DashboardDisconnect => unreachable!(),
+                        Message::VideoStreamData { id, packet } => {
+                            self.streams.feed_message(id, packet);
                         }
-                    }
+                        Message::VideoStreamCtl { .. } => {}
+                        Message::VideoStreamInfo { id, action } => {
+                            //TODO properly handle video stream info messages
+                            info!("VideoStreamInfo: {}: {:?}", id, action);
+                        }
+                    },
                     Event::ConnectedTo(_addr) => {}
                 }
             }
-            GUIMsg::Interaction(interaction_event) => {
-                match interaction_event {
-                    Interaction::Connect => {
-                        if let Some(ref mut stream) = self.stream {
-                            stream
-                                .ctrl_send
-                                .send(StreamControllMsg::ConnectTo(self.addr.clone()))
-                                .unwrap();
-                        }
-                    }
-                    Interaction::Disconnect => {
-                        if let Some(ref mut stream) = self.stream {
-                            stream.msg_send.send(Message::DashboardDisconnect).unwrap();
-                            stream.ctrl_send.send(StreamControllMsg::Flush).unwrap();
-                            stream
-                                .ctrl_send
-                                .send(StreamControllMsg::Disconnect)
-                                .unwrap();
-                        }
+            GUIMsg::Interaction(interaction_event) => match interaction_event {
+                Interaction::Connect => {
+                    if let Some(ref mut stream) = self.stream {
+                        stream
+                            .ctrl_send
+                            .send(StreamControllMsg::ConnectTo(self.addr.clone()))
+                            .unwrap();
                     }
                 }
-                dbg!(interaction_event);
-            }
+                Interaction::Disconnect => {
+                    if let Some(ref mut stream) = self.stream {
+                        stream.msg_send.send(Message::DashboardDisconnect).unwrap();
+                        stream.ctrl_send.send(StreamControllMsg::Flush).unwrap();
+                        stream
+                            .ctrl_send
+                            .send(StreamControllMsg::Disconnect)
+                            .unwrap();
+                    }
+                }
+                Interaction::CameraStream(event) => {
+                    self.streams.feed_event(event);
+                    for message in self.streams.messages().drain(..) {
+                        self.stream
+                            .as_ref()
+                            .unwrap()
+                            .msg_send
+                            .send(message)
+                            .unwrap();
+                    }
+                }
+            },
             GUIMsg::Keyboard(_keyboard_event) => {}
         }
         Command::none()
@@ -182,9 +169,7 @@ where
                 Button::new(&mut self.gui.disconnect, Text::new("disconnect"))
                     .on_press(Interaction::Disconnect),
             )
-            .push(
-                iced::image::Image::new(self.video_0_handle.clone())
-            )
+            .push(self.streams.view().map(Interaction::CameraStream))
             .into();
         root.map(Self::Message::Interaction)
     }

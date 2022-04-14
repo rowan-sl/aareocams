@@ -57,3 +57,9 @@ Deployment requires a few extra steps
 - configure ssh so you can connect to the pi you are deploying to
 
 To deploy, make shure the pi is running and run `make deploy_r` or `make deploy_d` based on if you want to deploy release or debug code
+
+## TODO's
+
+- [ ] allow querying and configuration of camera formats from the dashboard, including resolution and FPS (and combinations of bolth)
+- [ ] fix dashboard so that it uses the new `Uuid` stream identification system
+- [ ] add configurable options for bits per packet when initializing a camera stream (lvenc encoder option)

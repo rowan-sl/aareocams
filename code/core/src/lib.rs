@@ -1,9 +1,13 @@
 extern crate image;
 extern crate openh264;
 
-use std::ops::Deref;
 use image::RgbImage;
-use openh264::{nal_units, encoder::{Encoder, EncoderConfig}, decoder::Decoder};
+use openh264::{
+    decoder::Decoder,
+    encoder::{Encoder, EncoderConfig},
+    nal_units,
+};
+use std::ops::Deref;
 
 pub struct H264Encoder {
     encoder: Encoder,
@@ -14,10 +18,7 @@ impl H264Encoder {
     pub fn new(width: u32, height: u32) -> Result<Self, openh264::Error> {
         let encoder = Encoder::with_config(EncoderConfig::new(width, height))?;
         let converter = openh264::formats::RBGYUVConverter::new(width as usize, height as usize);
-        Ok(Self {
-            encoder,
-            converter,
-        })
+        Ok(Self { encoder, converter })
     }
 
     pub fn encode(&mut self, img: &RgbImage) -> Result<Vec<u8>, openh264::Error> {
@@ -61,7 +62,8 @@ impl H264Decoder {
                 let rgb_len = dim.0 * dim.1 * 3;
                 let mut raw_rgb = vec![0; rgb_len];
                 decoded.write_rgb8(&mut raw_rgb)?;
-                decoded_images.push(RgbImage::from_raw(dim.0 as u32, dim.1 as u32, raw_rgb).unwrap());
+                decoded_images
+                    .push(RgbImage::from_raw(dim.0 as u32, dim.1 as u32, raw_rgb).unwrap());
             }
         }
 

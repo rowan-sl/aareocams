@@ -17,6 +17,9 @@ log4rs = "1.0.0"
 log = "0.4.16"
 image = "0.23"
 
+[dependencies.uuid]
+version = "0.8"
+features = ["v4", "serde"]
 
 [dependencies.aareocams-core]
 path = "../core"
