@@ -1501,6 +1501,7 @@ dependencies = [
 [[package]]
 name = "lvenc"
 version = "0.1.0"
+source = "git+https://github.com/rowan-sl/lvenc#dcd265edf4a814a5dc09d984817caf620af39063"
 dependencies = [
  "bitvec",
  "image",

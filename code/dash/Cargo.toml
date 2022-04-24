@@ -47,4 +47,4 @@ features = ["tokio", "image"]
 git = "https://github.com/iced-rs/iced.git"
 
 [dependencies.lvenc]
-path = "../../../lvenc-testing/lvenc"
+git = "https://github.com/rowan-sl/lvenc"

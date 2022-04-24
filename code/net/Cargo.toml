@@ -26,4 +26,4 @@ version = "1.17"
 features = ["full"]
 
 [dependencies.lvenc]
-path = "../../../lvenc-testing/lvenc"
+git = "https://github.com/rowan-sl/lvenc"
