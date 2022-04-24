@@ -29,7 +29,7 @@ see [config](config/README.md)
 
 currently there is realy no point, as you need the robot to use it ¯\\\_(ツ)_/¯ but in order to build the code you need a few things
 
-- cargo, with the `armv7-unknown-linux-gnueabihf` toolchain installed
+- cargo, with the `armv7-unknown-linux-gnueabihf` toolchain installed (see [toolchain](##Toolchain))
 - `gcc-arm-linux-gnueabihf` (for linking)
 - gstreamer (for installation instructions, see the [gstreamer-rs build instructions](https://github.com/sdroege/gstreamer-rs#installation))
 - opencv (see the [rust opencv library github](https://github.com/twistedfall/opencv-rust) for installation details)
@@ -55,6 +55,14 @@ Deployment requires a few extra steps
 - configure ssh so you can connect to the pi you are deploying to
 
 To deploy, make shure the pi is running and run `make deploy_r` or `make deploy_d` based on if you want to deploy release or debug code
+
+## Toolchain
+
+Configuring the raspberry pi cross compilation toolchain is annoying at best, so it is recommended to use [this build script collection](https://github.com/abhiTronix/raspberry-pi-cross-compilers).
+
+To start, run `make build-toolchain`. Currently all it does is download the repo into the [toolchain](toolchain) directory, but this will be improved in the future to do more of this process.
+
+after this, run the toolchain build script ([instructions](toolchain/raspberry-pi-cross-compilers/build-scripts/README.md)) and copy the resulting executables into the `toolchain/bin/` directory.
 
 ## TODO's
 
