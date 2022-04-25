@@ -25,6 +25,7 @@ mod config;
 
 use aareocams_net::Message;
 use aareocams_scomm::Stream;
+use adafruit_motorkit::dc::DcMotor;
 use anyhow::Result;
 use camera_server::CameraServer;
 use nokhwa::CameraInfo;
@@ -65,6 +66,23 @@ async fn main() -> Result<()> {
     let _ = get_camera_cfgs()?;
     info!("Starting camera server");
     let mut camera_server = CameraServer::new();
+    info!("Starting motor controller subsystem");
+    let mut motor_controller = adafruit_motorkit::init_pwm(None)?;
+    if let Err(e) =  motor_controller.enable() {
+        error!("Failed to initialize motor controller #0\n{:#?}", e);
+        anyhow::bail!("Error while initializing motor controller, see logs for more info");
+    }
+
+    //* tmp code
+    // let mut stepper1 = StepperMotor::try_new(&mut motor_controller, adafruit_motorkit::Motor::Stepper1, None)?;
+    // loop {
+    //     stepper1.step_once(&mut motor_controller, adafruit_motorkit::stepper::StepDirection::Forward, adafruit_motorkit::stepper::StepStyle::Single)?;
+    // }
+    let mut motor0 = DcMotor::try_new(&mut motor_controller, adafruit_motorkit::Motor::Motor1)?;
+    motor0.set_throttle(&mut motor_controller, 0.7)?;
+    motor0.stop(&mut motor_controller)?;
+    //* end tmp code
+
     info!("Listening for a new connection");
     let listener = TcpListener::bind(cfg.addr).await?;
     let (raw_conn, port) = listener.accept().await?;
@@ -90,7 +108,9 @@ async fn main() -> Result<()> {
                                 Message::VideoStreamCtl { id, action } => {
                                     camera_server.feed_ctrl_msg(id, action);
                                 }
-                                _ => {}
+                                other => {
+                                    error!("Unhandled message:\n{:#?}", other);
+                                }
                             }
                             m
                         }
