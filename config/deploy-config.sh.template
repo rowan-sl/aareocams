@@ -1,4 +1,5 @@
 AAREOCAMS_DEPLOY_TARGET_IP="ip of the deploy target here"
 AAREOCAMS_DEPLOY_TARGET_UNAME="username of the deploy target here"
 # this is a absoulte path
-AAREOCAMS_DEPLOY_TARGET_PATH="path to put the deployed file on"
+AAREOCAMS_DEPLOY_TARGET_PATH="path to put the deployed executable on"
+AAREOCAMS_DEPLOY_TARGET_CONFIG_PATH="path to put the config file on (should end in ./config/, and the executable should be placed in the directory above ./config/, so it can locate the config file)"
