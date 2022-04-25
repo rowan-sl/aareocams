@@ -4,7 +4,6 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 /// A list of all errors that can be thrown by the library.
 pub enum MotorError {

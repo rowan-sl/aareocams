@@ -1,7 +1,6 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::motorkit_compat;
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DCMotorAction {
@@ -10,7 +9,7 @@ pub enum DCMotorAction {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub enum StepperMotorAction { }
+pub enum StepperMotorAction {}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum MotorAction {
@@ -49,7 +48,7 @@ pub enum MotorCtl {
         ///
         /// the type of `MotorAction` must match the `MotorMode` of the referenced motor
         action: MotorAction,
-    }
+    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

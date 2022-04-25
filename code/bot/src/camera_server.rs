@@ -8,7 +8,6 @@ use aareocams_net::{Message, VideoStreamAction, VideoStreamInfo};
 use nokhwa::Camera;
 use uuid::Uuid;
 
-
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct CameraInterface {
@@ -108,11 +107,20 @@ impl CameraServer {
                                 Ok(frame) => {
                                     interface.encoder.encode_frame(frame);
                                     for packet in interface.encoder.packets() {
-                                        message_queue.send(Message::VideoStreamData { id, packet }).unwrap();
+                                        message_queue
+                                            .send(Message::VideoStreamData { id, packet })
+                                            .unwrap();
                                     }
                                 }
                                 Err(read_error) => {
-                                    message_queue.send(Message::VideoStreamInfo { id, action: VideoStreamInfo::ReadError { message: format!("{:#?}", read_error) } }).unwrap();
+                                    message_queue
+                                        .send(Message::VideoStreamInfo {
+                                            id,
+                                            action: VideoStreamInfo::ReadError {
+                                                message: format!("{:#?}", read_error),
+                                            },
+                                        })
+                                        .unwrap();
                                 }
                             }
                         }
@@ -126,7 +134,9 @@ impl CameraServer {
                                 // only pay attention if it is for us
                                 if message.0 == id {
                                     match message.1 {
-                                        VideoStreamAction::Init { .. } => unreachable!("this shoulld be handled by the outer match statement"),
+                                        VideoStreamAction::Init { .. } => unreachable!(
+                                            "this shoulld be handled by the outer match statement"
+                                        ),
                                         VideoStreamAction::Close => {
                                             let _ = interface.cam.stop_stream();
                                             break 'main;
@@ -142,7 +152,9 @@ impl CameraServer {
                             }
                             Err(recv_err) => {
                                 match recv_err {
-                                    flume::TryRecvError::Disconnected => panic!("update channel was closed before threads were shut down!"),
+                                    flume::TryRecvError::Disconnected => panic!(
+                                        "update channel was closed before threads were shut down!"
+                                    ),
                                     flume::TryRecvError::Empty => {
                                         if interface.paused {
                                             // woken up if anything important happens

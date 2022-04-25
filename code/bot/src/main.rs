@@ -6,6 +6,7 @@ extern crate aareocams_scomm;
 extern crate adafruit_motorkit;
 extern crate anyhow;
 extern crate bincode;
+extern crate flume;
 extern crate image;
 extern crate lvenc;
 extern crate nokhwa;
@@ -14,7 +15,6 @@ extern crate serde;
 extern crate tokio;
 extern crate uuid;
 extern crate yaml_rust;
-extern crate flume;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
@@ -68,7 +68,7 @@ async fn main() -> Result<()> {
     let mut camera_server = CameraServer::new();
     info!("Starting motor controller subsystem");
     let mut motor_controller = adafruit_motorkit::init_pwm(None)?;
-    if let Err(e) =  motor_controller.enable() {
+    if let Err(e) = motor_controller.enable() {
         error!("Failed to initialize motor controller #0\n{:#?}", e);
         anyhow::bail!("Error while initializing motor controller, see logs for more info");
     }
