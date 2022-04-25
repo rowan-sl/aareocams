@@ -62,6 +62,7 @@ name = "aareocams-net"
 version = "0.1.0"
 dependencies = [
  "aareocams-scomm",
+ "adafruit_motorkit",
  "lvenc",
  "serde",
  "thiserror",
