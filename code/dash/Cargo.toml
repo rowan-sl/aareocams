@@ -17,6 +17,8 @@ log4rs = "1.0.0"
 log = "0.4.16"
 image = "0.23"
 yaml-rust = "0.4"
+rustls = "0.20.4"
+flume = "0.10.12"
 
 [dependencies.uuid]
 version = "0.8"

@@ -5,6 +5,7 @@ extern crate aareocams_net;
 extern crate aareocams_scomm;
 extern crate anyhow;
 extern crate bincode;
+extern crate flume;
 extern crate iced;
 extern crate iced_native;
 extern crate image;
@@ -20,6 +21,7 @@ extern crate derivative;
 #[macro_use]
 extern crate log;
 extern crate log4rs;
+extern crate rustls;
 
 mod config;
 mod dash;

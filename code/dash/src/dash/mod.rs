@@ -9,7 +9,7 @@ use iced::{
     Application, Command, Subscription, Text,
 };
 use std::fmt::Debug;
-use tokio::{net::ToSocketAddrs, sync::mpsc};
+use tokio::net::ToSocketAddrs;
 
 #[derive(Debug)]
 pub enum GUIMsg<A: tokio::net::ToSocketAddrs + Debug> {
@@ -32,8 +32,8 @@ pub struct GUIState {
 
 struct StreamInterface<A: ToSocketAddrs + Debug> {
     /// channel to send messages, gets passed on to the socket
-    pub msg_send: mpsc::UnboundedSender<Message>,
-    pub ctrl_send: mpsc::UnboundedSender<stream::StreamControllMsg<A>>,
+    pub msg_send: flume::Sender<Message>,
+    pub ctrl_send: flume::Sender<stream::StreamControllMsg<A>>,
 }
 
 pub struct Dashboard<A>

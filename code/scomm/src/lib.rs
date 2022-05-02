@@ -8,6 +8,7 @@ extern crate derivative;
 #[allow(unused_imports)]
 #[macro_use]
 extern crate log;
+extern crate rustls;
 
 pub mod connection;
 pub mod header;

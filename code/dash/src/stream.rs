@@ -3,7 +3,7 @@ use iced_native::subscription::{self, Subscription};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
 use tokio::{io, net::ToSocketAddrs, select};
-use tokio::{net::TcpStream, sync::mpsc};
+use tokio::net::TcpStream;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error<A: ToSocketAddrs> {
@@ -34,8 +34,8 @@ pub enum StreamControllMsg<A: ToSocketAddrs + Debug> {
 pub enum Event<A: ToSocketAddrs + Debug, M: Serialize + DeserializeOwned + Debug> {
     Error(Error<A>),
     Init {
-        msg_send: mpsc::UnboundedSender<M>,
-        ctrl_send: mpsc::UnboundedSender<StreamControllMsg<A>>,
+        msg_send: flume::Sender<M>,
+        ctrl_send: flume::Sender<StreamControllMsg<A>>,
     },
     ConnectedTo(A),
     Received(M),
@@ -44,13 +44,13 @@ pub enum Event<A: ToSocketAddrs + Debug, M: Serialize + DeserializeOwned + Debug
 enum State<A: ToSocketAddrs + Debug, M: Serialize + DeserializeOwned> {
     Uninitialized,
     Ready {
-        msg_recv: mpsc::UnboundedReceiver<M>,
-        ctrl_recv: mpsc::UnboundedReceiver<StreamControllMsg<A>>,
+        msg_recv: flume::Receiver<M>,
+        ctrl_recv: flume::Receiver<StreamControllMsg<A>>,
     },
     Running {
         stream: Stream<M, bincode::DefaultOptions>,
-        msg_recv: mpsc::UnboundedReceiver<M>,
-        ctrl_recv: mpsc::UnboundedReceiver<StreamControllMsg<A>>,
+        msg_recv: flume::Receiver<M>,
+        ctrl_recv: flume::Receiver<StreamControllMsg<A>>,
     },
     UnrecoverableExit,
 }
@@ -68,8 +68,8 @@ pub fn like_and_subscribe<
         move |mut state: State<A, M>| async move {
             match state {
                 State::Uninitialized => {
-                    let (ctrl_send, ctrl_recv) = mpsc::unbounded_channel();
-                    let (msg_tx, msg_rx) = mpsc::unbounded_channel();
+                    let (ctrl_send, ctrl_recv) = flume::unbounded();
+                    let (msg_tx, msg_rx) = flume::unbounded();
                     (
                         Some(Event::Init {
                             msg_send: msg_tx,
@@ -83,9 +83,9 @@ pub fn like_and_subscribe<
                 }
                 State::Ready {
                     msg_recv,
-                    mut ctrl_recv,
+                    ctrl_recv,
                 } => {
-                    if let Some(msg) = ctrl_recv.recv().await {
+                    if let Ok(msg) = ctrl_recv.recv_async().await {
                         match msg {
                             StreamControllMsg::ConnectTo(addr) => {
                                 let stream = match TcpStream::connect(addr.clone()).await {
@@ -150,8 +150,8 @@ pub fn like_and_subscribe<
                         return (Some(Event::Received(msg)), state);
                     }
                     select! {
-                        to_send = msg_recv.recv() => {
-                            if let Some(msg) = to_send {
+                        to_send = msg_recv.recv_async() => {
+                            if let Ok(msg) = to_send {
                                 if let Err(e) = stream.queue(&msg) {
                                     if let State::Running {msg_recv, ctrl_recv, ..} = state {
                                         return (
@@ -171,8 +171,8 @@ pub fn like_and_subscribe<
                                 )
                             }
                         }
-                        ctrl_update = ctrl_recv.recv() => {
-                            if let Some(update) = ctrl_update {
+                        ctrl_update = ctrl_recv.recv_async() => {
+                            if let Ok(update) = ctrl_update {
                                 match update {
                                     StreamControllMsg::ConnectTo(..) => {
                                         warn!("Attempted to connect while already connected");

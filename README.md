@@ -68,7 +68,8 @@ after this, run the toolchain build script ([instructions](toolchain/raspberry-p
 
 - [ ] allow querying and configuration of camera formats from the dashboard, including resolution and FPS (and combinations of bolth)
 - [ ] allow querying which cameras are available from the dashboard
-- [ ] fix dashboard so that it uses the new `Uuid` stream identification system
+- [x] fix dashboard so that it uses the new `Uuid` stream identification system
 - [ ] add configurable options for bits per packet when initializing a camera stream (lvenc encoder option)
-- [ ] **IMPORTANT** make `deploy.sh` move the bot config files as well as the executable!
+- [x] **IMPORTANT** make `deploy.sh` move the bot config files as well as the executable!
 - [ ] make a tool for setting up configuration
+- [ ] set up encrypted TLS connections
