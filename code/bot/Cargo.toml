@@ -17,6 +17,7 @@ image = "0.23"
 derivative = "2.2.0"
 yaml-rust = "0.4"
 flume = "0.10"
+async-trait = "0.1"
 
 [dependencies.uuid]
 version = "0.8"
@@ -25,6 +26,11 @@ features = ["v4", "serde"]
 [dependencies.nokhwa]
 version = "0.9"
 features = ["input-v4l"]
+
+[dependencies.parking_lot]
+# version = "0.1"
+git = "https://github.com/Amanieu/parking_lot"
+features = ["nightly", "deadlock_detection"]
 
 [dependencies.aareocams-core]
 path = "../core"
@@ -45,3 +51,8 @@ features = ["derive"]
 
 [dependencies.lvenc]
 git = "https://github.com/rowan-sl/lvenc"
+
+[dependencies.dabus]
+# make this into a git dependancy in the future
+# this is curently only a path dep since dabus is under heavy development (by me)
+path = "../../../dabus/dabus"

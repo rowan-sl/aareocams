@@ -5,11 +5,14 @@ extern crate aareocams_net;
 extern crate aareocams_scomm;
 extern crate adafruit_motorkit;
 extern crate anyhow;
+extern crate async_trait;
 extern crate bincode;
+extern crate dabus;
 extern crate flume;
 extern crate image;
 extern crate lvenc;
 extern crate nokhwa;
+extern crate parking_lot;
 extern crate pretty_env_logger;
 extern crate serde;
 extern crate tokio;
@@ -22,18 +25,17 @@ extern crate log;
 
 pub mod camera_server;
 mod config;
+mod systems;
 
 use aareocams_net::Message;
 use aareocams_scomm::Stream;
-use adafruit_motorkit::dc::DcMotor;
+// use adafruit_motorkit::dc::DcMotor;
 use anyhow::Result;
-use camera_server::CameraServer;
+use dabus::DABus;
 use nokhwa::CameraInfo;
 use tokio::{net::TcpListener, select};
 
-// mod config {
-//     pub const ADDR: &str = "127.0.0.1:6440";
-// }
+use systems::camera;
 
 pub fn get_camera_cfgs() -> Result<Vec<CameraInfo>> {
     info!("Searching for cameras");
@@ -56,31 +58,35 @@ async fn main() -> Result<()> {
     println!("Reading configuration");
     let cfg = config::load_config("config/bot.yml")?;
 
+    println!("Initializing logging");
     pretty_env_logger::formatted_builder()
         .filter_level(log::LevelFilter::Debug)
         .init();
-
+    info!("Initialized logging");
     info!("Read configuration {:#?}", cfg);
 
-    info!("Initialized logging");
+    info!("Initializing application bus");
+    let mut bus = DABus::new();
+
     let _ = get_camera_cfgs()?;
     info!("Starting camera server");
-    let mut camera_server = CameraServer::new();
-    info!("Starting motor controller subsystem");
-    let mut motor_controller = adafruit_motorkit::init_pwm(None)?;
-    if let Err(e) = motor_controller.enable() {
-        error!("Failed to initialize motor controller #0\n{:#?}", e);
-        anyhow::bail!("Error while initializing motor controller, see logs for more info");
-    }
+    bus.register(camera::CameraSystem::new());
+    let camera_update_channel = bus.fire(camera::GET_RECEIVER, ()).await?;
+    // info!("Starting motor controller subsystem");
+    // let mut motor_controller = adafruit_motorkit::init_pwm(None)?;
+    // if let Err(e) = motor_controller.enable() {
+    //     error!("Failed to initialize motor controller #0\n{:#?}", e);
+    //     anyhow::bail!("Error while initializing motor controller, see logs for more info");
+    // }
 
     //* tmp code
     // let mut stepper1 = StepperMotor::try_new(&mut motor_controller, adafruit_motorkit::Motor::Stepper1, None)?;
     // loop {
     //     stepper1.step_once(&mut motor_controller, adafruit_motorkit::stepper::StepDirection::Forward, adafruit_motorkit::stepper::StepStyle::Single)?;
     // }
-    let mut motor0 = DcMotor::try_new(&mut motor_controller, adafruit_motorkit::Motor::Motor1)?;
-    motor0.set_throttle(&mut motor_controller, 0.7)?;
-    motor0.stop(&mut motor_controller)?;
+    // let mut motor0 = DcMotor::try_new(&mut motor_controller, adafruit_motorkit::Motor::Motor1)?;
+    // motor0.set_throttle(&mut motor_controller, 0.7)?;
+    // motor0.stop(&mut motor_controller)?;
     //* end tmp code
 
     info!("Listening for a new connection");
@@ -106,7 +112,7 @@ async fn main() -> Result<()> {
                         Some(m) => {
                             match m.clone() {
                                 Message::VideoStreamCtl { id, action } => {
-                                    camera_server.feed_ctrl_msg(id, action);
+                                    bus.fire(camera::FEED_CTRL_MSG, (id, action)).await?;
                                 }
                                 other => {
                                     error!("Unhandled message:\n{:#?}", other);
@@ -118,8 +124,8 @@ async fn main() -> Result<()> {
                     }
                 );
             }
-            to_send = camera_server.collect_message() => {
-                conn.queue(&to_send)?;
+            to_send = camera_update_channel.recv_async() => {
+                conn.queue(&to_send?)?;
             }
         };
     }

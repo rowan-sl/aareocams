@@ -5,6 +5,7 @@ use std::{
 };
 
 use aareocams_net::{Message, VideoStreamAction, VideoStreamInfo};
+use flume::Receiver;
 use nokhwa::Camera;
 use uuid::Uuid;
 
@@ -182,6 +183,10 @@ impl CameraServer {
 
     pub async fn collect_message(&mut self) -> Message {
         self.message_queue.recv_async().await.unwrap()
+    }
+
+    pub fn get_receiver(&mut self) -> Receiver<Message> {
+        self.message_queue.clone()
     }
 
     pub fn clean(&mut self) {

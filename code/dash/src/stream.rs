@@ -2,8 +2,8 @@ use aareocams_scomm::{connection, Stream};
 use iced_native::subscription::{self, Subscription};
 use serde::{de::DeserializeOwned, Serialize};
 use std::fmt::Debug;
-use tokio::{io, net::ToSocketAddrs, select};
 use tokio::net::TcpStream;
+use tokio::{io, net::ToSocketAddrs, select};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error<A: ToSocketAddrs> {
