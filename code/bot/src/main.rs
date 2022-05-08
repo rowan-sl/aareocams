@@ -3,6 +3,7 @@
 extern crate aareocams_core;
 extern crate aareocams_net;
 extern crate aareocams_scomm;
+extern crate aareocams_intercom;
 // raspberry pi motor hat
 extern crate adafruit_motorkit;
 extern crate anyhow;
