@@ -5,6 +5,7 @@ members = [
     "code/net", #    aareocams-net
     "code/dash", #   aareocams-dash
     "code/bot", #    aareocams-bot
+    "code/intercom"# aareocams-intercom
 ]
 exclude = [
     "code/subsystems/template/esp32c3-reference-project"

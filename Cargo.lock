@@ -60,6 +60,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "aareocams-intercom"
+version = "0.1.0"
+dependencies = [
+ "aareocams-core",
+]
+
+[[package]]
 name = "aareocams-net"
 version = "0.1.0"
 dependencies = [
