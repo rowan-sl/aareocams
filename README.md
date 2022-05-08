@@ -73,3 +73,4 @@ after this, run the toolchain build script ([instructions](toolchain/raspberry-p
 - [x] **IMPORTANT** make `deploy.sh` move the bot config files as well as the executable!
 - [ ] make a tool for setting up configuration
 - [ ] set up encrypted TLS connections
+- [ ] add build script support for building and deploying subsystems

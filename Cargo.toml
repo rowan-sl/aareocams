@@ -6,6 +6,9 @@ members = [
     "code/dash", #   aareocams-dash
     "code/bot", #    aareocams-bot
 ]
+exclude = [
+    "code/subsystems/template/esp32c3-reference-project"
+]
 # because cargo workspace be dumb sometimes
 resolver = "2"
 

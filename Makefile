@@ -56,3 +56,4 @@ deploy_d: debug
 clean:
 	$(CARGO_CMD) clean
 	rm -rf --preserve-root=all $(OUTDIR)
+	cd code/subsystems/template/esp32c3-reference-project && cargo clean
