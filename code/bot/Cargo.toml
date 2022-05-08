@@ -18,6 +18,7 @@ derivative = "2.2.0"
 yaml-rust = "0.4"
 flume = "0.10"
 async-trait = "0.1"
+rppal = "0.13"
 
 [dependencies.uuid]
 version = "0.8"

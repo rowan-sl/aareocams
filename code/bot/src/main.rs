@@ -3,6 +3,7 @@
 extern crate aareocams_core;
 extern crate aareocams_net;
 extern crate aareocams_scomm;
+// raspberry pi motor hat
 extern crate adafruit_motorkit;
 extern crate anyhow;
 extern crate async_trait;
@@ -18,6 +19,8 @@ extern crate serde;
 extern crate tokio;
 extern crate uuid;
 extern crate yaml_rust;
+// other raspberry pi GPIO things
+extern crate rppal;
 #[macro_use]
 extern crate derivative;
 #[macro_use]
