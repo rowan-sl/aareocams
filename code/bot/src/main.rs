@@ -5,7 +5,6 @@ extern crate aareocams_net;
 extern crate aareocams_scomm;
 extern crate aareocams_intercom;
 // raspberry pi motor hat
-extern crate adafruit_motorkit;
 extern crate anyhow;
 extern crate async_trait;
 extern crate bincode;
@@ -39,7 +38,7 @@ use dabus::DABus;
 use nokhwa::CameraInfo;
 use tokio::{net::TcpListener, select};
 
-use systems::camera;
+use systems::camera;//, drivetrain};
 
 pub fn get_camera_cfgs() -> Result<Vec<CameraInfo>> {
     info!("Searching for cameras");
@@ -76,6 +75,10 @@ async fn main() -> Result<()> {
     info!("Starting camera server");
     bus.register(camera::CameraSystem::new());
     let camera_update_channel = bus.fire(camera::GET_RECEIVER, ()).await?;
+
+    info!("Starting drivetrain");
+    // let mut drive = drivetrain::SuperHackyStepperDriver::new();
+
     // info!("Starting motor controller subsystem");
     // let mut motor_controller = adafruit_motorkit::init_pwm(None)?;
     // if let Err(e) = motor_controller.enable() {
@@ -117,6 +120,13 @@ async fn main() -> Result<()> {
                             match m.clone() {
                                 Message::VideoStreamCtl { id, action } => {
                                     bus.fire(camera::FEED_CTRL_MSG, (id, action)).await?;
+                                }
+                                Message::Drive(_action) => {
+                                    // drive.set_dir(match action {
+                                    //     DriveAction::Fwd => drivetrain::MotorAction::Fwd,
+                                    //     DriveAction::Rev => drivetrain::MotorAction::Back,
+                                    //     DriveAction::Stop => drivetrain::MotorAction::Stop,
+                                    // });
                                 }
                                 other => {
                                     error!("Unhandled message:\n{:#?}", other);

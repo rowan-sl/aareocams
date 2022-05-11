@@ -110,11 +110,12 @@ where
                         Message::VideoStreamData { id, packet } => {
                             self.streams.feed_message(id, packet);
                         }
-                        Message::VideoStreamCtl { .. } => {}
+                        Message::VideoStreamCtl { .. } => unreachable!(),
                         Message::VideoStreamInfo { id, action } => {
                             //TODO properly handle video stream info messages
                             info!("VideoStreamInfo: {}: {:?}", id, action);
                         }
+                        Message::Drive(..) => unreachable!(),
                     },
                     Event::ConnectedTo(_addr) => {}
                 }
@@ -150,7 +151,11 @@ where
                     }
                 }
             },
-            GUIMsg::Keyboard(_keyboard_event) => {}
+            GUIMsg::Keyboard(keyboard_event) => {
+                match keyboard_event {
+                    keyboard::Event::Drive(action) => self.stream.as_ref().unwrap().msg_send.send(Message::Drive(action)).unwrap()
+                }
+            }
         }
         Command::none()
     }

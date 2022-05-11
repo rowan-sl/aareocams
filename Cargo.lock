@@ -10,7 +10,6 @@ dependencies = [
  "aareocams-intercom",
  "aareocams-net",
  "aareocams-scomm",
- "adafruit_motorkit",
  "anyhow",
  "async-trait",
  "bincode",
@@ -23,7 +22,7 @@ dependencies = [
  "nokhwa",
  "parking_lot 0.12.0 (git+https://github.com/Amanieu/parking_lot)",
  "pretty_env_logger",
- "rppal 0.13.1",
+ "rppal",
  "serde",
  "tokio",
  "uuid 0.8.2",
@@ -66,7 +65,7 @@ version = "0.1.0"
 dependencies = [
  "aareocams-core",
  "esp-idf-hal",
- "rppal 0.13.1",
+ "rppal",
 ]
 
 [[package]]
@@ -74,7 +73,6 @@ name = "aareocams-net"
 version = "0.1.0"
 dependencies = [
  "aareocams-scomm",
- "adafruit_motorkit",
  "lvenc",
  "serde",
  "thiserror",
@@ -111,18 +109,6 @@ name = "ab_glyph_rasterizer"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a13739d7177fbd22bb0ed28badfff9f372f8bef46c863db4e1c6248f6b223b6e"
-
-[[package]]
-name = "adafruit_motorkit"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "735f2e46e2f70eb9d4e58e8ef37b2da1bddf65313de34ef9f5592bd00d8e394c"
-dependencies = [
- "lazy_static",
- "linux-embedded-hal",
- "pwm-pca9685",
- "rppal 0.11.3",
-]
 
 [[package]]
 name = "addr2line"
@@ -420,12 +406,6 @@ dependencies = [
  "log",
  "nix 0.22.3",
 ]
-
-[[package]]
-name = "cast"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37b2a672a2cb129a2e41c10b1224bb368f9f37a2b16b612598138befd7b37eb5"
 
 [[package]]
 name = "cc"
@@ -769,7 +749,7 @@ dependencies = [
 
 [[package]]
 name = "dabus"
-version = "0.1.0"
+version = "0.2.1"
 dependencies = [
  "async-recursion",
  "async-trait",
@@ -1349,17 +1329,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gpio-cdev"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "409296415b8abc7b47e5b77096faae14595c53724972da227434fc8f4b05ec8b"
-dependencies = [
- "bitflags",
- "libc",
- "nix 0.23.1",
-]
-
-[[package]]
 name = "gpu-alloc"
 version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1452,18 +1421,6 @@ name = "humantime"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
-
-[[package]]
-name = "i2cdev"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b8fe61341e9ce588ede54fd131bf0df63eed3c6e45fcc7fa0e548ea176f39358"
-dependencies = [
- "bitflags",
- "byteorder",
- "libc",
- "nix 0.23.1",
-]
 
 [[package]]
 name = "iced"
@@ -1642,15 +1599,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ioctl-rs"
-version = "0.1.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7970510895cee30b3e9128319f2cefd4bde883a39f38baa279567ba3a7eb97d"
-dependencies = [
- "libc",
-]
-
-[[package]]
 name = "itertools"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1750,24 +1698,6 @@ name = "linked-hash-map"
 version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
-
-[[package]]
-name = "linux-embedded-hal"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61861762ac50cb746e6137f1aeb2ca9812e1b1f2b923cfc83550befdc0b9915d"
-dependencies = [
- "cast",
- "embedded-hal 0.2.7",
- "gpio-cdev",
- "i2cdev",
- "nb 0.1.3",
- "serial-core",
- "serial-unix",
- "spidev",
- "sysfs_gpio",
- "void",
-]
 
 [[package]]
 name = "lock_api"
@@ -2099,19 +2029,6 @@ name = "nix"
 version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e4916f159ed8e5de0082076562152a76b7a1f64a01fd9d1e0fea002c37624faf"
-dependencies = [
- "bitflags",
- "cc",
- "cfg-if 1.0.0",
- "libc",
- "memoffset",
-]
-
-[[package]]
-name = "nix"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f866317acbd3a240710c63f065ffb1e4fd466259045ccb504130b7f668f35c6"
 dependencies = [
  "bitflags",
  "cc",
@@ -2506,16 +2423,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9145ac0af1d93c638c98c40cf7d25665f427b2a44ad0a99b1dccf3e2f25bb987"
 
 [[package]]
-name = "pwm-pca9685"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d0ea8d6d7be055a0d2ef0141ba458ad48d80f6e2a94f0a5b31398ee554f3c2d"
-dependencies = [
- "embedded-hal 0.2.7",
- "nb 0.1.3",
-]
-
-[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2713,19 +2620,6 @@ dependencies = [
 
 [[package]]
 name = "rppal"
-version = "0.11.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "137dbba1fb867daa27cda4c3cd6a11bca5bb5a1551f034cf9319b994846ddbe1"
-dependencies = [
- "embedded-hal 0.2.7",
- "lazy_static",
- "libc",
- "nb 0.1.3",
- "void",
-]
-
-[[package]]
-name = "rppal"
 version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c88c9c6248de4d337747b619d8f671055ef48a87dc21b97998833f189a0bbd4f"
@@ -2861,27 +2755,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "serial-core"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f46209b345401737ae2125fe5b19a77acce90cd53e1658cda928e4fe9a64581"
-dependencies = [
- "libc",
-]
-
-[[package]]
-name = "serial-unix"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f03fbca4c9d866e24a459cbca71283f545a37f8e3e002ad8c70593871453cab7"
-dependencies = [
- "ioctl-rs",
- "libc",
- "serial-core",
- "termios",
-]
-
-[[package]]
 name = "shlex"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2986,17 +2859,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "spidev"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5c43e891adf1abc1e09b10f80c8d91959ee20ec28425c6dadac78844ba4c709f"
-dependencies = [
- "bitflags",
- "libc",
- "nix 0.23.1",
-]
-
-[[package]]
 name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3085,15 +2947,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sysfs_gpio"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ef9c9bcbfeb596ce4da59b2c59736235f35dcd516f03958ea10834473224157"
-dependencies = [
- "nix 0.23.1",
-]
-
-[[package]]
 name = "tap"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3120,15 +2973,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bab24d30b911b2376f3a13cc2cd443142f0c81dda04c118693e35b3835757755"
 dependencies = [
  "winapi-util",
-]
-
-[[package]]
-name = "termios"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5d9cf598a6d7ce700a4e6a9199da127e6819a61e64b68609683cc9a01b5683a"
-dependencies = [
- "libc",
 ]
 
 [[package]]

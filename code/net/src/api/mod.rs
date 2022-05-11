@@ -1,5 +1,4 @@
-pub mod motor;
-pub mod motorkit_compat;
+// pub mod motor;
 pub mod video;
 
 use serde::{Deserialize, Serialize};
@@ -22,4 +21,12 @@ pub enum Message {
         id: uuid::Uuid,
         action: VideoStreamAction,
     },
+    Drive (DriveAction)
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum DriveAction {
+    Fwd,
+    Rev,
+    Stop,
 }

@@ -38,19 +38,25 @@ clean_out_dir_rel:
 debug: out_dir clean_out_dir_dbg
 	$(CARGO_BUILD_CMD) build --bin aareocams-dash
 	$(CARGO_BUILD_CMD) build --target armv7-unknown-linux-gnueabihf --bin aareocams-bot
-	mv target/debug/aareocams-dash $(OUTDIR)/debug
-	mv target/armv7-unknown-linux-gnueabihf/debug/aareocams-bot $(OUTDIR)/debug
+	cp target/debug/aareocams-dash $(OUTDIR)/debug
+	cp target/armv7-unknown-linux-gnueabihf/debug/aareocams-bot $(OUTDIR)/debug
 
 release: out_dir clean_out_dir_rel
 	$(CARGO_BUILD_CMD) build --profile $(OPT_PROFILE) --bin aareocams-dash
 	$(CARGO_BUILD_CMD) build --profile $(OPT_PROFILE) --target armv7-unknown-linux-gnueabihf --bin aareocams-bot
-	mv target/$(OPT_PROFILE)/aareocams-dash $(OUTDIR)/release
-	mv target/armv7-unknown-linux-gnueabihf/$(OPT_PROFILE)/aareocams-bot $(OUTDIR)/release
+	cp target/$(OPT_PROFILE)/aareocams-dash $(OUTDIR)/release
+	cp target/armv7-unknown-linux-gnueabihf/$(OPT_PROFILE)/aareocams-bot $(OUTDIR)/release
 
 deploy_r: release
 	export AAREOCAMS_DEPLOY_BUILD_MODE=release && ./tools/deploy.sh
 
 deploy_d: debug
+	export AAREOCAMS_DEPLOY_BUILD_MODE=debug && ./tools/deploy.sh
+
+deploy_nobuild_r:
+	export AAREOCAMS_DEPLOY_BUILD_MODE=release && ./tools/deploy.sh
+
+deploy_nobuild_d:
 	export AAREOCAMS_DEPLOY_BUILD_MODE=debug && ./tools/deploy.sh
 
 clean:

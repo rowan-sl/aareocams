@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use crate::motorkit_compat;
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum DCMotorAction {
     Stop,

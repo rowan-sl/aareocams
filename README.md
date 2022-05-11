@@ -74,3 +74,5 @@ after this, run the toolchain build script ([instructions](toolchain/raspberry-p
 - [ ] make a tool for setting up configuration
 - [ ] set up encrypted TLS connections
 - [ ] add build script support for building and deploying subsystems
+- [ ] figure out if can bus is a viable option for communicating with subsystems instead of i2c
+- [ ] get a different motor hat then the current one :angre:
