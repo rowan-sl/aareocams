@@ -25,7 +25,7 @@ dependencies = [
  "rppal",
  "serde",
  "tokio",
- "uuid 0.8.2",
+ "uuid",
  "yaml-rust",
 ]
 
@@ -55,7 +55,7 @@ dependencies = [
  "sn30pro",
  "thiserror",
  "tokio",
- "uuid 0.8.2",
+ "uuid",
  "yaml-rust",
 ]
 
@@ -77,7 +77,7 @@ dependencies = [
  "serde",
  "thiserror",
  "tokio",
- "uuid 0.8.2",
+ "uuid",
 ]
 
 [[package]]
@@ -200,17 +200,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0f780da53d0063880d45554306489f09dd8d1bda47688b4a57bc579119356df"
 dependencies = [
  "libloading",
-]
-
-[[package]]
-name = "async-recursion"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2cda8f4bcc10624c4e85bc66b3f452cca98cfa5ca002dc83a16aad2367641bea"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -749,18 +738,14 @@ dependencies = [
 
 [[package]]
 name = "dabus"
-version = "0.2.1"
+version = "0.4.3"
 dependencies = [
- "async-recursion",
  "async-trait",
- "derivative",
  "flume",
  "futures",
  "log",
- "pretty_env_logger",
  "thiserror",
- "tokio",
- "uuid 1.0.0",
+ "unique-type",
 ]
 
 [[package]]
@@ -3147,6 +3132,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ccb82d61f80a663efe1f787a51b16b5a51e3314d6ac365b08639f52387b33f3"
 
 [[package]]
+name = "unique-type"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65276803d5c0b9aeb522fffd31e97ec312a60344f6d345dfa640e809038c740f"
+
+[[package]]
 name = "unsafe-any"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3169,15 +3160,6 @@ checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 dependencies = [
  "getrandom",
  "serde",
-]
-
-[[package]]
-name = "uuid"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cfcd319456c4d6ea10087ed423473267e1a071f3bc0aa89f80d60997843c6f0"
-dependencies = [
- "getrandom",
 ]
 
 [[package]]
